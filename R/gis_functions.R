@@ -5,11 +5,11 @@
 #'
 #' @title Create a mask by distance from points
 #'
-#' @description Create a mask RasterLayer with NA vaules in all cells more
+#' @description Create a mask \code{RasterLayer} with NA values in all cells more
 #'  than a specified distance from a set of points.
 #'
-#' @param mask a Raster* object, used as the starting mask. All cells which
-#'  are NA in \code{mask} will be NA in the resulting RasterLayer.
+#' @param mask a \code{Raster*} object, used as the starting mask. All cells which
+#'  are NA in \code{mask} will be NA in the resulting \code{RasterLayer}.
 #'
 #' @param points a set of points (given as a two-column matrix of coordinates)
 #'  around which top calculate the buffer.
@@ -18,7 +18,7 @@
 #'  If the coordinate system of \code{mask} is latitude/longitude, this will be
 #'  in metres, otherwise in the units of the \code{mask}'s coordinate system.
 #'
-#' @return A RasterLayer with the same extent, resolution and coordinate system
+#' @return A \code{RasterLayer} with the same extent, resolution and coordinate system
 #' as \code{mask} and with non-NA cells being 0.
 #'
 #' @family GIS

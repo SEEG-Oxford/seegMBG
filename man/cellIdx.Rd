@@ -16,6 +16,7 @@ a numeric vector of cell numbers
 Get the cell numbers matching all non-NA cells.
 }
 \seealso{
-Other utility: \code{\link{badRows}}
+Other utility: \code{\link{+.formula}},
+  \code{\link{merge.formula}}; \code{\link{badRows}}
 }
 

@@ -24,13 +24,13 @@ badRows <- function (x) apply(x, 1, function(row) any(is.na(row)))
 #' @name cellIdx
 #' @rdname cellIdx
 #'
-#' @title Find non-NA Raster or RasterBrick Cell numbers
+#' @title Find non-NA \code{Raster} or \code{RasterBrick} cell numbers
 #'
 #' @description Get the cell numbers matching all non-NA cells.
 #'
-#' @param x a Raster or RasterBrick object
+#' @param x a \code{Raster} or \code{RasterBrick} object
 #'
-#' @return a numeric vector foi cell numbers
+#' @return a numeric vector of cell numbers
 #'
 #' @family utility
 cellIdx <- function (x) which(!is.na(getValues(x[[1]])))

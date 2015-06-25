@@ -1,2 +1,2 @@
 exportPattern("^[[:alpha:]]+")
-import(raster, sp)
+# import(raster, sp)

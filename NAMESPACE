@@ -3,6 +3,8 @@
 export(badRows)
 export(bufferMask)
 export(cellIdx)
+export(gamTrans)
 export(insertRaster)
 export(pcaTrans)
+import(mgcv)
 import(raster)

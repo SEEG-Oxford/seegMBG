@@ -13,7 +13,9 @@ which to carry out the PCA analysis}
 \item{covs}{a \code{Raster*} object containing covariates to rotate}
 }
 \value{
-a \code{Raster*}
+a \code{Raster*} object with the same extent, resolutiona and number
+ of layers as \code{covs} but with each layer giving the location on a
+ different principal component axis.
 }
 \description{
 Given a matrix of point coordinates and a Raster* object of

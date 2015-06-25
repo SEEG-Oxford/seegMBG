@@ -2,15 +2,15 @@
 % Please edit documentation in R/utility.R
 \name{cellIdx}
 \alias{cellIdx}
-\title{Find non-NA Raster or RasterBrick Cell numbers}
+\title{Find non-NA \code{Raster} or \code{RasterBrick} cell numbers}
 \usage{
 cellIdx(x)
 }
 \arguments{
-\item{x}{a Raster or RasterBrick object}
+\item{x}{a \code{Raster} or \code{RasterBrick} object}
 }
 \value{
-a numeric vector foi cell numbers
+a numeric vector of cell numbers
 }
 \description{
 Get the cell numbers matching all non-NA cells.

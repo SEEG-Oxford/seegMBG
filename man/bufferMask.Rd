@@ -7,8 +7,8 @@
 bufferMask(mask, points, buffer = 0)
 }
 \arguments{
-\item{mask}{a Raster* object, used as the starting mask. All cells which
- are NA in \code{mask} will be NA in the resulting RasterLayer.}
+\item{mask}{a \code{Raster*} object, used as the starting mask. All cells which
+ are NA in \code{mask} will be NA in the resulting \code{RasterLayer}.}
 
 \item{points}{a set of points (given as a two-column matrix of coordinates)
  around which top calculate the buffer.}
@@ -18,11 +18,11 @@ bufferMask(mask, points, buffer = 0)
  in metres, otherwise in the units of the \code{mask}'s coordinate system.}
 }
 \value{
-A RasterLayer with the same extent, resolution and coordinate system
+A \code{RasterLayer} with the same extent, resolution and coordinate system
 as \code{mask} and with non-NA cells being 0.
 }
 \description{
-Create a mask RasterLayer with NA vaules in all cells more
+Create a mask \code{RasterLayer} with NA values in all cells more
  than a specified distance from a set of points.
 }
 \seealso{

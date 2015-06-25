@@ -8,3 +8,4 @@ Maintainer: Nick Golding <nick.golding.research@gmail.com>
 Description: A number of utility functions for carrying out model-based geostatistical (MBG) analyses for recent SEEG projects.
 License: GPL(>2)
 LazyData: TRUE
+Imports: raster

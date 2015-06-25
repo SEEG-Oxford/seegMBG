@@ -23,6 +23,9 @@
 #'
 #' @family GIS
 #'
+#' @export
+#' @import raster
+#'
 bufferMask <- function (mask, points, buffer = 0) {
 
   # set mask to 0
@@ -77,6 +80,9 @@ bufferMask <- function (mask, points, buffer = 0) {
 #'
 #' @family GIS
 #'
+#' @export
+#' @import raster
+#'
 insertRaster <- function (raster, new_vals, idx = NULL) {
 
 
@@ -102,11 +108,3 @@ insertRaster <- function (raster, new_vals, idx = NULL) {
   return (raster_new)
 
 }
-
-
-
-
-
-
-
-

@@ -19,6 +19,9 @@
 #'
 #' @family transform
 #'
+#' @export
+#' @import raster
+#'
 pcaTrans <- function(coords, covs) {
 
 

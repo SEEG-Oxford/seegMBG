@@ -13,6 +13,8 @@
 #'
 #' @family utility
 #'
+#' @export
+#'
 #' @examples
 #' # fake data matrix with a missing row
 #' x <- matrix(rnorm(3 * 4), nrow = 3)
@@ -33,4 +35,8 @@ badRows <- function (x) apply(x, 1, function(row) any(is.na(row)))
 #' @return a numeric vector of cell numbers
 #'
 #' @family utility
+#'
+#' @export
+#' @import raster
+#'
 cellIdx <- function (x) which(!is.na(getValues(x[[1]])))

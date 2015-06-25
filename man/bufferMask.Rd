@@ -25,4 +25,7 @@ as \code{mask} and with non-NA cells being 0.
 Create a mask RasterLayer with NA vaules in all cells more
  than a specified distance from a set of points.
 }
+\seealso{
+Other GIS: \code{\link{insertRaster}}
+}
 

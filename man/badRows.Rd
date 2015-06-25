@@ -22,6 +22,7 @@ x[2, 3] <- NA
 badRows(x)
 }
 \seealso{
-Other utility: \code{\link{cellIdx}}
+Other utility: \code{\link{+.formula}},
+  \code{\link{merge.formula}}; \code{\link{cellIdx}}
 }
 

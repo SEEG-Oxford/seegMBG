@@ -1,6 +1,6 @@
 Package: seegMBG
 Type: Package
-Title: Streamlined Model-based Geostatistics Functions for the SEEG Research Group
+Title: Streamlined Model-Based Geostatistics Functions for the SEEG Research Group
 Version: 0.01
 Date: 2015-06-25
 Author: Nick Golding
@@ -8,3 +8,4 @@ Maintainer: Nick Golding <nick.golding.research@gmail.com>
 Description: A number of utility functions for carrying out model-based geostatistical (MBG) analyses for recent SEEG projects.
 License: GPL(>2)
 LazyData: TRUE
+Imports: raster, mgcv

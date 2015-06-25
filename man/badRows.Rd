@@ -21,4 +21,7 @@ x <- matrix(rnorm(3 * 4), nrow = 3)
 x[2, 3] <- NA
 badRows(x)
 }
+\seealso{
+Other utility: \code{\link{cellIdx}}
+}
 

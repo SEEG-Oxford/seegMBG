@@ -64,8 +64,8 @@ periodMortality <- function (age_death,
   lower_mat <- t(expand(windows_lower, n))
 
   # data matrices
-  age_death <- expand(age_death, nw = nw)
-  birth_int <- expand(birth_int, nw = nw)
+  age_death <- expand(age_death, nw)
+  birth_int <- expand(birth_int, nw)
 
   # empty objects to store total deaths and exposures for each window
   deaths <- exposed <- 0

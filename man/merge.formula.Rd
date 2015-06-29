@@ -27,12 +27,12 @@ g <- ~ a * b + c
 
 fg <- merge(f, g)
 fg
-\\\\
-
 fg <- f + g
 fg
 }
 \seealso{
-Other utility: \code{\link{badRows}}; \code{\link{cellIdx}}
+Other utility: \code{\link{aggMatrix}};
+  \code{\link{badRows}}; \code{\link{cellIdx}};
+  \code{\link{expand}}; \code{\link{rowProds}}
 }
 

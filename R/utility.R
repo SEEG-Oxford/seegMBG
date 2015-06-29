@@ -139,13 +139,164 @@ merge.formula <- function(x, y, ...){
 #' @export
 #' @examples
 #'
-#' \\
 #'
 #' fg <- f + g
 #' fg
 #'
 `+.formula` <- function (x, y) {
-  ans <- merge(e1, e2)
+  ans <- merge(x, y)
   environment(ans) <- parent.frame()
   return (ans)
 }
+
+
+# get formula left-hand-side
+getLHS <- function(f) {
+
+  # check input
+  stopifnot(inherits(f, 'formula'))
+
+  # get element
+  if(length(f) == 2) {
+    stop ('this formula has no left-hand side')
+  } else {
+    ans <- f[[2]]
+  }
+
+  # convert to string
+  ans <- deparse(ans)
+
+  return (ans)
+}
+
+# get formula right-hand-side
+getRHS <- function(f, split = TRUE) {
+
+  # check input
+  stopifnot(inherits(f, 'formula'))
+
+  # get element
+  if(length(f) == 2) {
+    ans <- f[[2]]
+  } else if (length(f) == 3) {
+    ans <- f[[3]]
+  } else {
+    stop ('I have no idea what this is')
+  }
+
+  # convert to string
+  ans <- deparse(ans)
+
+
+  # optionally split up predictors
+  if (split) {
+    ans <- strsplit(ans, '\\+')[[1]]
+  }
+
+  return (ans)
+
+}
+
+#' @name expand
+#' @rdname expand
+#'
+#' @title Expand a Vector into a Multi-column Matrix
+#' @description Create a matrix by combining multiple copies of a vector as
+#'  columns
+#'
+#' @param x a vector (data to repeat into \code{n} columns)
+#' @param n an integer (number of times to repeat \code{x})
+#'
+#' @export
+#'
+#' @return a matrix with dimensions \code{length(x), n}, with \code{x} repeated
+#'  in each column
+#'
+#' @family utility
+#'
+#' @examples
+#'
+#' x <- rnorm(5)
+#' expand(x, 3)
+#'
+expand <- function(x, n) {
+
+  # check input
+  stopifnot(length(n) == 1)
+  stopifnot(is.vector(x))
+
+  # replicate x as an n-column matrix
+  ans <- matrix(rep(x, n), nrow = length(x))
+
+  return (ans)
+
+}
+
+#' @name rowProds
+#' @rdname rowProds
+#'
+#' @title Form Row Products
+#' @description Form row products for numeric arrays
+#'
+#' @param x an array of two or more dimensions, containing numeric, complex,
+#'  integer or logical values, or a numeric data frame.
+#' @param na.rm logical. Should missing values (including NaN) be omitted from
+#'  the calculations?
+#' @param dims integer: Which dimensions are regarded as ‘rows’ to
+#'  sum over. The product is over dimensions dims+1.
+#'
+#' @export
+#'
+#' @return A numeric or complex array of suitable size, or a vector if the
+#'  result is one-dimensional.
+#'
+#' @family utility
+#'
+#' @examples
+#'
+#' x <- expand(rnorm(5), 3)
+#' rowProds(x)
+#'
+rowProds <- function(x, na.rm = FALSE, dims = 1) {
+  apply(x, dims, prod, na.rm = na.rm)
+}
+
+#' @name aggMatrix
+#' @rdname aggMatrix
+#'
+#' @title Aggregate Values Accross Rows of a Matrix
+#' @description Apply a function columnwise to groups of rows in a matrix,
+#'  according to a grouping index. Essentially applies the same
+#'  \code{\link{tapply}} to multiple colums of a matrix.
+#'
+#' @param x a matrix containing numeric, complex, integer or logical values,
+#'  or a  data frame.
+#' @param index list of one or more factors, each of same length as
+#'  \code{dim(x)[1]} (as in \code{tapply}). The elements are coerced
+#'  to factors by as.factor.
+#' @param fun the function to be applied. In the case of functions
+#'  like \code{+}, \code{\%*\%}, etc., the function name must be backquoted
+#'  or quoted.
+#' @param margin over which margin should the operation take place
+#'  (i.e. which margin matches \code{index}).
+#'
+#' @export
+#'
+#' @return a matrix with dimensions \code{dim(x)[1], length(index)}
+#'
+#' @family utility
+#'
+#' @examples
+#'
+#' x <- expand(rnorm(5), 3)
+#' aggMatrix(x, c(1, 1, 1, 2, 2))
+#'
+aggMatrix <- function(x, index, fun = sum, margin = 1) {
+  # aggregate rows of a matrix for dataframe using function and according to
+  # index
+  agg <- function(x) tapply(x, INDEX = index, FUN = fun)
+  margin <- ifelse(margin == 1, 2, 1)
+  apply(x, margin, agg)
+}
+
+

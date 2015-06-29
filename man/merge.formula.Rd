@@ -13,6 +13,8 @@ merge.formula(x, y, ...)
 \item{x}{a \code{formula} object with both response and predictor terms}
 
 \item{y}{a \code{formula} object with predictor terms (response ignored)}
+
+\item{\dots}{further arguments passed to or from other methods.}
 }
 \value{
 a \code{formula} with the response form \code{x} and the predictors

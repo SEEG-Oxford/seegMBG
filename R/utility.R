@@ -55,7 +55,7 @@ getLHS <- function(f) {
   }
 
   # convert to string
-  ans <- deparse(ans)
+  ans <- paste0(deparse(ans), collapse = '')
 
   return (ans)
 }

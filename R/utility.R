@@ -55,7 +55,7 @@ getLHS <- function(f) {
   }
 
   # convert to string
-  ans <- deparse(ans)
+  ans <- paste0(deparse(ans), collapse = '')
 
   return (ans)
 }
@@ -76,8 +76,7 @@ getRHS <- function(f, split = TRUE) {
   }
 
   # convert to string
-  ans <- deparse(ans)
-
+  ans <- paste0(deparse(ans), collapse = '')
 
   # optionally split up predictors
   if (split) {

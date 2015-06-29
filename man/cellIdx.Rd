@@ -17,6 +17,8 @@ Get the cell numbers matching all non-NA cells.
 }
 \seealso{
 Other utility: \code{\link{+.formula}},
-  \code{\link{merge.formula}}; \code{\link{badRows}}
+  \code{\link{merge.formula}}; \code{\link{aggMatrix}};
+  \code{\link{badRows}}; \code{\link{expand}};
+  \code{\link{rowProds}}
 }
 

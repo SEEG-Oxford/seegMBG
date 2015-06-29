@@ -23,6 +23,8 @@ badRows(x)
 }
 \seealso{
 Other utility: \code{\link{+.formula}},
-  \code{\link{merge.formula}}; \code{\link{cellIdx}}
+  \code{\link{merge.formula}}; \code{\link{aggMatrix}};
+  \code{\link{cellIdx}}; \code{\link{expand}};
+  \code{\link{rowProds}}
 }
 

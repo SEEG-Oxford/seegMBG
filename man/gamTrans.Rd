@@ -31,8 +31,8 @@ gamTrans(coords, response, covs, family = gaussian, condition = NULL,
 \item{condition_covs}{an optional \code{Raster*} object giving the spatial covariates
  for the conditional part of the model}
 
-\item{extra_terms}{an optional text string (of the form \code{'s(x, k = 2)'}
- or similar which can be pasted onto a string version of the model formula)
+\item{extra_terms}{an optional formula object (of the form \code{~ s(x, k = 2)}
+ or similar which can be concatenated onto the model formula)
  specifying further model components (in \code{extra_data}) not provided in
  the spatial covariates.}
 

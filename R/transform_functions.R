@@ -91,8 +91,8 @@ pcaTrans <- function(coords, covs) {
 #' @param condition_covs an optional \code{Raster*} object giving the spatial covariates
 #'  for the conditional part of the model
 #'
-#' @param extra_terms an optional text string (of the form \code{'s(x, k = 2)'}
-#'  or similar which can be pasted onto a string version of the model formula)
+#' @param extra_terms an optional formula object (of the form \code{~ s(x, k = 2)}
+#'  or similar which can be concatenated onto the model formula)
 #'  specifying further model components (in \code{extra_data}) not provided in
 #'  the spatial covariates.
 #'
@@ -141,14 +141,12 @@ gamTrans <- function(coords,
   # whether there's a conditional bit
   cond <- !is.null(condition)
 
+  stopifnot(inherits(extra_terms, 'formula'))
+
   # check inputs
   stopifnot(inherits(covs, 'Raster'))
   if (cond)
     stopifnot(inherits(condition_covs, 'Raster'))
-
-  # default for extra_terms part
-  if (is.null(extra_terms))
-    extra_terms <- ''
 
   # add 'cond_' onto the conditional covariate names to prevent naming conflicts
   # with the disease model
@@ -164,23 +162,23 @@ gamTrans <- function(coords,
   # ~~~~~~~~~~~~~
   # build formula
 
-  resp_terms <- 'response ~ '
-  cov_terms <- paste0('s(',
+  cov_terms <- reformulate(paste0('s(',
                       paste0(cov_names, collapse = ') + s('),
-                      ') + ')
+                      ')'))
 
-  # determine the conditional part of the function
+  f <- response ~ 1 + cov_terms
+
+  # if required, add conditional terms
   if (cond) {
-    cond_int_terms <- 'condition_intercept + '
-    cond_terms <- paste0('s(',
+    cond_terms <- reformulate(paste0('s(',
                          paste0(cond_names, collapse = ', by = condition) + s('),
-                         ', by = condition) + ')
-  } else {
-    cond_int_terms <- cond_terms <- ''
+                         ', by = condition)'))
+    f <- f + cond_terms + ~ condition_intercept
   }
 
-  # construct formula
-  f <- formula(paste0(resp_terms, cov_terms, cond_int_terms, cond_terms, extra_terms))
+  # if required, add extra terms
+  if (!is.null(extra_terms))
+    f <- f + extra_terms
 
   # ~~~~~~~~~~~~~
   # get training data

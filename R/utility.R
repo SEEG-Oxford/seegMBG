@@ -1,5 +1,6 @@
 # Miscellaneous utility functions
 
+
 #' @name badRows
 #' @rdname badRows
 #'

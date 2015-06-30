@@ -125,7 +125,7 @@ periodMortality <- function (age_death,
                          age_death >= lower_mat) # alive at start of cohort
 
     # and effective number that died
-    deaths_cohort <- (exposed > 0 &  # actually exposed this time
+    deaths_cohort <- (exposed_cohort > 0 &  # actually exposed this time
                         age_death <= upper_mat &  # died before end of window
                         age_death >= lower_mat)  # died after start of window
 
@@ -149,6 +149,7 @@ periodMortality <- function (age_death,
   if (glm) {
 
     # set up the glm data frame
+    if (verbose) message('formatting data for glm')
 
     # round up the deaths and exposures
     exposed_agg <- round(exposed_agg)

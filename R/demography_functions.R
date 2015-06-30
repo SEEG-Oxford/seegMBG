@@ -22,9 +22,10 @@
 #'  non-overlapping lower and upper ages in months of the age windows for
 #'  which to estimate mortality rates
 #' @param period the length of time in months for which mortality rates
-#'  should be estimated
+#'  should be estimated, either vector or scalar
 #' @param delay the length of time in months prior to the interview date
-#'  to end the period. I.e. the period runs from \code{period + delay}
+#'  to end the period, either vector or scalar.
+#'  I.e. the period runs from \code{period + delay}
 #'  months to \code{delay} months before the interview month.
 #'
 #' @export
@@ -48,9 +49,14 @@ periodMortality <- function (age_death,
   nw <- length(windows_lower)
   na <- length(ages_lower)
 
+  if(length(period) == 1) period <- rep(period, n)
+  if(length(delay) == 1) delay <- rep(delay, n)
+
   # check all argument are the right size
   stopifnot(length(birth_int) == n)
   stopifnot(length(cluster_id) == n)
+  stopifnot(length(period) == n)
+  stopifnot(length(delay) == n)
   stopifnot(length(windows_upper) == nw)
   stopifnot(length(ages_upper) == na)
 
@@ -66,6 +72,10 @@ periodMortality <- function (age_death,
   upper_mat <- t(expand(windows_upper, n))
   lower_mat <- t(expand(windows_lower, n))
 
+  # delay and period matrices
+  delay_mat <- expand(delay, nw)
+  period_mat <- expand(period, nw)
+
   # data matrices
   age_death <- expand(age_death, nw)
   birth_int <- expand(birth_int, nw)
@@ -76,22 +86,21 @@ periodMortality <- function (age_death,
   # loop through cohorts
   for(cohort in c('A', 'B', 'C')) {
 
-    # cohort end date
-    start <- switch(cohort,
-                    B = windows_upper,
-                    A = period + windows_lower,
-                    C = windows_lower )
+    # cohort end date matrix
+    start_mat <- switch(cohort,
+                    B = upper_mat,
+                    A = period_mat + lower_mat,
+                    C = lower_mat )
 
-    # cohort start date
-    end <- switch(cohort,
-                  B = period + windows_lower,
-                  A = period + windows_upper,
-                  C = windows_upper)
+    # cohort start date matrix
+    end_mat <- switch(cohort,
+                  B = period_mat + lower_mat,
+                  A = period_mat + upper_mat,
+                  C = upper_mat)
 
-    # turn into matrices, and add gap between end of period and the interview
-    # date
-    start_mat <- t(expand(start, n)) + delay
-    end_mat <- t(expand(end, n)) + delay
+    # and add gap between end of period and the interview date
+    start_mat <- start_mat + delay_mat
+    end_mat <- end_mat + delay_mat
 
     # add effective number exposed
     exposed_cohort <- (birth_int <= end_mat &  # entered cohort before cohort end date

@@ -29,10 +29,11 @@ non-overlapping lower and upper ages in months of the age windows for
 which to estimate mortality rates}
 
 \item{period}{the length of time in months for which mortality rates
-should be estimated}
+should be estimated, either vector or scalar}
 
 \item{delay}{the length of time in months prior to the interview date
- to end the period. I.e. the period runs from \code{period + delay}
+ to end the period, either vector or scalar.
+ I.e. the period runs from \code{period + delay}
  months to \code{delay} months before the interview month.}
 }
 \value{

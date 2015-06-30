@@ -101,7 +101,6 @@ periodMortality <- function (age_death,
     df <- data.frame(died = NA,
                      exposed = NA,
                      window = factor(NA),
-                     cohort = factor(NA),
                      cluster = factor(NA),
                      weight = NA)
 
@@ -154,7 +153,7 @@ periodMortality <- function (age_death,
       # if using a glm, set up dataframe
       df_tmp <- data.frame(died = as.vector(exposed_agg),
                        exposed = as.vector(deaths_agg),
-                       window = rep(1:nw, each = n),
+                       window = rep(1:nw, each = length(clusters)),
                        cluster = rep(clusters, nw),
                        weight = weight)
 

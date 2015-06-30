@@ -32,7 +32,7 @@
 #'  If \code{FALSE} probabilities are calculated as the raw ratio of the
 #'  number that survived to the number exposed and may therefore contain
 #'  zeros and indeterminate values.
-#'
+#' @param verbose whether to regularly report the stage of the analysis
 #' @export
 #'
 #' @import INLA
@@ -51,7 +51,10 @@ periodMortality <- function (age_death,
                       ages_upper = c(12, 60),
                       period = 60,
                       delay = max(windows_upper - windows_lower),
-                      glm = FALSE) {
+                      glm = FALSE,
+                      verbose = TRUE) {
+
+  if (verbose) message('formatting data')
 
   n <- length(age_death)
   nw <- length(windows_lower)
@@ -112,6 +115,8 @@ periodMortality <- function (age_death,
   # loop through cohorts
   for(cohort in c('A', 'B', 'C')) {
 
+    if (verbose) message(paste('processing cohort', cohort))
+
     # cohort end date matrix
     start_mat <- switch(cohort,
                     B = upper_mat,
@@ -139,11 +144,9 @@ periodMortality <- function (age_death,
                         age_death >= lower_mat)  # died after start of window
 
     # get the cohort weight
-    weight <- ifelse(cohort == 'B', 0.5, 0.25)
+    weight <- ifelse(cohort == 'B', 1, 0.5)
 
     if (glm) {
-
-      # if glm probabilities wanted, format training data
 
       # first aggregate exposures/deaths by cluster
       exposed_agg <- aggMatrix(exposed_cohort, cluster_id)
@@ -151,8 +154,8 @@ periodMortality <- function (age_death,
 
       # convert to long format by stacking on top of each other
       # if using a glm, set up dataframe
-      df_tmp <- data.frame(died = as.vector(exposed_agg),
-                       exposed = as.vector(deaths_agg),
+      df_tmp <- data.frame(died = as.vector(deaths_agg),
+                       exposed = as.vector(exposed_agg),
                        window = rep(1:nw, each = length(clusters)),
                        cluster = rep(clusters, nw),
                        weight = weight)
@@ -163,8 +166,8 @@ periodMortality <- function (age_death,
     } else {
 
       # otherwise accumulate these raw numbers with weights
-      exposed <- exposed + exposed_cohort * weight
-      deaths <- deaths + deaths_cohort * weight
+      exposed <- exposed + exposed_cohort * weight / 2
+      deaths <- deaths + deaths_cohort * weight / 2
 
     }
 
@@ -179,6 +182,8 @@ periodMortality <- function (age_death,
 
     # enable weights in inla
     inla.setOption("enable.inla.argument.weights", TRUE)
+
+    if (verbose) message('running glm')
 
     # fit the model
     m <- inla(f,
@@ -218,8 +223,11 @@ periodMortality <- function (age_death,
 
   }
 
+  if (verbose) message('computing survival probabilities')
+
   # get results
   ans <- list()
+
   # loop through required ages
   for (i in 1:na) {
 

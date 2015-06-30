@@ -139,8 +139,8 @@ periodMortality <- function (age_death,
   } # cohort loop
 
   # check they're all sane
-  stopifnot(all(exposed <= 0))
-  stopifnot(all(deaths <= 0))
+  stopifnot(all(exposed <= 2))
+  stopifnot(all(deaths <= 2))
 
   # aggregate by cluster
   exposed_agg <- aggMatrix(exposed, cluster_id)

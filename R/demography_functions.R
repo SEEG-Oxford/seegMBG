@@ -177,13 +177,13 @@ periodMortality <- function (age_death,
 
     # fit the glm
 
+    if (verbose) message('running glm')
+
     # define the formula
     f <- died ~ 1 + f(window, model = 'iid') + f(cluster, model = 'iid')
 
     # enable weights in inla
     inla.setOption("enable.inla.argument.weights", TRUE)
-
-    if (verbose) message('running glm')
 
     # fit the model
     m <- inla(f,
@@ -191,7 +191,7 @@ periodMortality <- function (age_death,
               family = 'binomial',
               weights = df$weight,
               Ntrials = df$exposed,
-              control.compute = list(config = TRUE))
+              control.predictor = list(compute = TRUE))
 
     # switch weights off again
     inla.setOption("enable.inla.argument.weights", FALSE)

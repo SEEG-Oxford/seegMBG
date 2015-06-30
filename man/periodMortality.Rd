@@ -7,7 +7,7 @@
 periodMortality(age_death, birth_int, cluster_id, windows_lower = c(0, 1, 3,
   6, 12, 24, 36, 48), windows_upper = c(0, 2, 5, 11, 23, 35, 47, 59),
   ages_lower = c(0, 0), ages_upper = c(12, 60), period = 60,
-  delay = max(windows_upper - windows_lower))
+  delay = max(windows_upper - windows_lower), glm = FALSE)
 }
 \arguments{
 \item{age_death}{numeric vector giving the age of death in months of each
@@ -32,9 +32,15 @@ which to estimate mortality rates}
 should be estimated, either vector or scalar}
 
 \item{delay}{the length of time in months prior to the interview date
- to end the period, either vector or scalar.
- I.e. the period runs from \code{period + delay}
- months to \code{delay} months before the interview month.}
+to end the period, either vector or scalar.
+I.e. the period runs from \code{period + delay}
+months to \code{delay} months before the interview month.}
+
+\item{glm}{whether to infer the window-specific survival probabilities
+ using a binomial random effects model across cluster, window and cohort.
+ If \code{FALSE} probabilities are calculated as the raw ratio of the
+ number that survived to the number exposed and may therefore contain
+ zeros and indeterminate values.}
 }
 \value{
 a list with the same number of elements as \code{ages}, each

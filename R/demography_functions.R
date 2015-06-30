@@ -21,8 +21,11 @@
 #' @param ages_lower,ages_upper numeric vectors giving the
 #'  non-overlapping lower and upper ages in months of the age windows for
 #'  which to estimate mortality rates
-#' @param window the length of time in months prior to the interview date
-#'  for which mortality rates should be estimated
+#' @param period the length of time in months for which mortality rates
+#'  should be estimated
+#' @param delay the length of time in months prior to the interview date
+#'  to end the period. I.e. the period runs from \code{period + delay}
+#'  months to \code{delay} months before the interview month.
 #'
 #' @export
 #'
@@ -38,8 +41,8 @@ periodMortality <- function (age_death,
                       windows_upper = c(0, 2, 5, 11, 23, 35, 47, 59),
                       ages_lower = c(0, 0),
                       ages_upper = c(12, 60),
-                      window = 60) {
-
+                      period = 60,
+                      delay = max(windows_upper - windows_lower)) {
 
   n <- length(age_death)
   nw <- length(windows_lower)
@@ -76,18 +79,19 @@ periodMortality <- function (age_death,
     # cohort end date
     start <- switch(cohort,
                     B = windows_upper,
-                    A = window + windows_lower,
+                    A = period + windows_lower,
                     C = windows_lower )
 
     # cohort start date
     end <- switch(cohort,
-                  B = window + windows_lower,
-                  A = window + windows_upper,
+                  B = period + windows_lower,
+                  A = period + windows_upper,
                   C = windows_upper)
 
-    # turn into matrices
-    start_mat <- t(expand(start, n))
-    end_mat <- t(expand(end, n))
+    # turn into matrices, and add gap between end of period and the interview
+    # date
+    start_mat <- t(expand(start, n)) + delay
+    end_mat <- t(expand(end, n)) + delay
 
     # add effective number exposed
     exposed_cohort <- (birth_int <= end_mat &  # entered cohort before cohort end date

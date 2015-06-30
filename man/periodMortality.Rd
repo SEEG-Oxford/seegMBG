@@ -6,7 +6,8 @@
 \usage{
 periodMortality(age_death, birth_int, cluster_id, windows_lower = c(0, 1, 3,
   6, 12, 24, 36, 48), windows_upper = c(0, 2, 5, 11, 23, 35, 47, 59),
-  ages_lower = c(0, 0), ages_upper = c(12, 60), window = 60)
+  ages_lower = c(0, 0), ages_upper = c(12, 60), period = 60,
+  delay = max(windows_upper - windows_lower))
 }
 \arguments{
 \item{age_death}{numeric vector giving the age of death in months of each
@@ -27,8 +28,12 @@ non-overlapping lower and upper ages in months of each survival window}
 non-overlapping lower and upper ages in months of the age windows for
 which to estimate mortality rates}
 
-\item{window}{the length of time in months prior to the interview date
- for which mortality rates should be estimated}
+\item{period}{the length of time in months for which mortality rates
+should be estimated}
+
+\item{delay}{the length of time in months prior to the interview date
+ to end the period. I.e. the period runs from \code{period + delay}
+ months to \code{delay} months before the interview month.}
 }
 \value{
 a list with the same number of elements as \code{ages}, each

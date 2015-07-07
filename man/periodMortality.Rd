@@ -7,7 +7,8 @@
 periodMortality(age_death, birth_int, cluster_id, windows_lower = c(0, 1, 3,
   6, 12, 24, 36, 48), windows_upper = c(0, 2, 5, 11, 23, 35, 47, 59),
   ages_lower = c(0, 0), ages_upper = c(12, 60), period = 60,
-  delay = max(windows_upper - windows_lower), glm = FALSE, verbose = TRUE)
+  delay = max(windows_upper - windows_lower), glm = FALSE, verbose = TRUE,
+  ...)
 }
 \arguments{
 \item{age_death}{numeric vector giving the age of death in months of each
@@ -43,6 +44,8 @@ number that survived to the number exposed and may therefore contain
 zeros and indeterminate values.}
 
 \item{verbose}{whether to regularly report the stage of the analysis}
+
+\item{\dots}{other arguments to pass to \code{INLA::inla}}
 }
 \value{
 a list with the same number of elements as \code{ages}, each

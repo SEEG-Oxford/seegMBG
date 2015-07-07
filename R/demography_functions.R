@@ -33,6 +33,8 @@
 #'  number that survived to the number exposed and may therefore contain
 #'  zeros and indeterminate values.
 #' @param verbose whether to regularly report the stage of the analysis
+#' @param \dots other arguments to pass to \code{INLA::inla}
+#'
 #' @export
 #'
 #' @import INLA
@@ -52,7 +54,8 @@ periodMortality <- function (age_death,
                       period = 60,
                       delay = max(windows_upper - windows_lower),
                       glm = FALSE,
-                      verbose = TRUE) {
+                      verbose = TRUE,
+                      ...) {
 
   if (verbose) message('formatting data')
 
@@ -172,7 +175,8 @@ periodMortality <- function (age_death,
               data = df,
               family = 'binomial',
               Ntrials = df$exposed,
-              control.predictor = list(compute = TRUE))
+              control.predictor = list(compute = TRUE),
+              ...)
 
     # get fitted mortality probabilities
     p <- m$summary.fitted.values$mode

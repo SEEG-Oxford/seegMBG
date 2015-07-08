@@ -2,7 +2,7 @@
 % Please edit documentation in R/inla_functions.R
 \name{getINLAParameters}
 \alias{getINLAParameters}
-\title{Extracting parameters form INLA MBG models}
+\title{Extracting parameters from INLA MBG models}
 \usage{
 getINLAParameters(inla, method = c("sample", "MAP"), n = 1)
 }

@@ -34,10 +34,17 @@
 #'  \code{control.compute = list(config=TRUE)}.
 #' @param n if \code{method = "sample"}, the number of samples to draw from the
 #'  predictive posterior.
+#' @param fixed whether to include fixed effects terms in the predictor
+#' @param spatial whether to include spatial terms in the predictor
+#' @param fixed_subset an optional character vector giving a subset of covariates
+#'  to include in the fixed effects prediction.
 #' @param ncpu the number of cores to use to make predictions. If
 #'  \code{ncpu = 1} then predicitons will be made sequentially, otherwise for
 #'  \code{n > 1} a snowfall cluster will be initiated and predictions run in
 #'  parallel.
+#'
+#' @export
+#' @import snowfall
 #'
 #' @return a matrix with the same number of rows as \code{data} giving the
 #'  predicted values at these locations
@@ -49,6 +56,9 @@ predictINLA <- function(inla,
                         type = c('link', 'response'),
                         method = c('sample', 'MAP'),
                         n = 1,
+                        fixed = TRUE,
+                        spatial = TRUE,
+                        fixed_subset = NULL,
                         ncpu = 1) {
 
   # match multiple-choice arguments
@@ -83,22 +93,31 @@ predictINLA <- function(inla,
   coords <- data[, coords]
 
   # ~~~
-  # find spatial term
-  spatial_term <- names(inla$summary.random)
-  stopifnot (length(spatial_term) == 1)
-
-  # ~~~
   # get parameters
-
   params <- getINLAParameters(inla = inla,
                               method = method,
-                              n = 1000)
+                              n = n)
 
+  # ~~~
+  # loop through draws making predictions
 
-  # make predictions
-  # loop, optionally in parallel
+  # set up snowfall cluster
+  snowfall::sfInit(cpus = ncpu, parallel = ncpu > 1)
 
+  results_list <- snowfall::sfLapply(1:n,
+                                     predictAll,
+                                     params = params,
+                                     mesh = mesh,
+                                     coords = coords,
+                                     data = data,
+                                     fixed_subset = fixed_subset,
+                                     spatial = spatial,
+                                     fixed = fixed)
 
+  snowfall::sfStop()
+
+  # combine the results into a matrix
+  results <- do.call(rbind, results_list)
 
   # optionally switch to response scale
   if (type == 'response')
@@ -112,7 +131,7 @@ predictINLA <- function(inla,
 #' @name getINLAParameters
 #' @rdname getINLAParameters
 #'
-#' @title Extracting parameters form INLA MBG models
+#' @title Extracting parameters from INLA MBG models
 #'
 #' @description Given a fitted \code{\link{inla}} object for a spatial or
 #'  spatio-temporal geostatistical model, extract model parameters
@@ -182,8 +201,8 @@ getINLAParameters <- function (inla, method = c('sample', 'MAP'), n = 1) {
   } else if (method == 'sample') {
 
     # if samples, get multiple draws of the model parameters
-    suppressWarnings(params <- inla.posterior.sample(inla,
-                                                     n = n))
+    suppressWarnings(params <- INLA::inla.posterior.sample(inla,
+                                                           n = n))
 
     # ~~~
     # hyper parameters
@@ -217,6 +236,8 @@ getINLAParameters <- function (inla, method = c('sample', 'MAP'), n = 1) {
                      drop = FALSE)
 
     # find the spatial indices
+    spatial_term <- names(inla$summary.random)
+    stopifnot (length(spatial_term) == 1)
     spatial_prefix <- paste0('^', spatial_term, '.')
     spatial_idx <- grep(spatial_prefix,
                         param_names)
@@ -339,6 +360,8 @@ predictFixed <- function (params, data, draw = 1, subset = NULL) {
 #'  random effect.
 #' @param draw which parameter set to use
 #'
+#' @import INLA
+#'
 #' @return a vector of the same length as the number of rows in \code{coords},
 #'  giving the corresponding values of the spatial linear predictor
 #'
@@ -354,12 +377,93 @@ predictSpatial <- function (params, coords, mesh, draw = 1) {
   spatial_par <- params$params[[draw]][spatial_idx]
 
   # define projector to new locations
-  proj <- inla.mesh.projector(mesh, coords)
+  proj <- INLA::inla.mesh.projector(mesh, coords)
 
   # project the spatial random field
-  ans <- inla.mesh.project(proj, spatial_par)
+  ans <- INLA::inla.mesh.project(proj, spatial_par)
 
   # return it
+  return (ans)
+
+}
+
+#' @name predictAll
+#' @rdname predictAll
+#'
+#' @title Predict the Linear Predictor of an INLA MBG Model
+#'
+#' @description For a given set of parameters and new dataset, get the
+#'  predicted values of the linear predictor form the fixed and spatial
+#'  random effects.
+#'
+#' @param draw which parameter set to use
+#' @param params an object of class \code{params} produced by
+#'  \code{\link{getINLAParameters}}.
+#' @param mesh the \code{\link{inla.mesh}} object used to construct the spatial
+#'  random effect.
+#' @param coords a two-column dataframe with the coordinates to evaluate the
+#'  spatial random effect at.
+#' @param data a dataframe with all the columns referred to in \code{params}.
+#' @param fixed_subset an optional character vector giving a subset of covariates
+#'  to include in the fixed effects prediction.
+#' @param fixed whether to include fixed effects terms in the predictor
+#' @param spatial whether to include spatial terms in the predictor
+#'
+#' @return a vector of the same length as the number of rows in \code{coords}
+#'  and \code{data}, giving the corresponding values of the spatial linear
+#'  predictor (both from the fixed and reandom effects)
+#'
+predictAll <- function (draw,
+                        params,
+                        mesh,
+                        coords,
+                        data,
+                        fixed_subset = NULL,
+                        fixed = TRUE,
+                        spatial = TRUE) {
+
+  # some sanity checks
+  stopifnot(inherits(params, 'params'))
+
+  if (spatial) {
+    stopifnot(inherits(mesh, 'inla.mesh'))
+    stopifnot(inherits(coords, 'data.frame') & ncol(coords) == 2)
+  }
+  if (fixed) {
+    stopifnot(inherits(data, 'data.frame'))
+    stopifnot(inherits(fixed_subset, 'character') | is.null(fixed_subset))
+  }
+  if (fixed & spatial) {
+    stopifnot(nrow(coords) == nrow(data))
+  }
+
+
+  # get the fixed effect predictions
+  if (fixed) {
+    # either true predictions
+    pred_fixed <- predictFixed(params = params,
+                               data = data,
+                               draw = draw,
+                               subset = fixed_subset)
+  } else {
+    # or zeroes
+    pred_fixed <- rep(0, nrow(data))
+  }
+
+  # and the spatial random effect predictions
+  if (spatial) {
+    # either true predictions
+    pred_spatial <- predictSpatial(params = params,
+                                   coords = coords,
+                                   mesh = mesh,
+                                   draw = draw)
+  } else {
+    # or zeroes
+    pred_spatial<- rep(0, nrow(coords))
+  }
+
+  # add them together and return
+  ans <- pred_fixed + pred_spatial
   return (ans)
 
 }

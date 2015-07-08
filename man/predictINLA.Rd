@@ -5,7 +5,8 @@
 \title{Prediction from INLA MBG models}
 \usage{
 predictINLA(inla, data, mesh, coords = c("lat", "long"), type = c("link",
-  "response"), method = c("sample", "MAP"), n = 1, ncpu = 1)
+  "response"), method = c("sample", "MAP"), n = 1, fixed = TRUE,
+  spatial = TRUE, fixed_subset = NULL, ncpu = 1)
 }
 \arguments{
 \item{inla}{a fitted \code{\link{inla}} object with fixed effects terms
@@ -38,6 +39,13 @@ have been fitted with the argument
 
 \item{n}{if \code{method = "sample"}, the number of samples to draw from the
 predictive posterior.}
+
+\item{fixed}{whether to include fixed effects terms in the predictor}
+
+\item{spatial}{whether to include spatial terms in the predictor}
+
+\item{fixed_subset}{an optional character vector giving a subset of covariates
+to include in the fixed effects prediction.}
 
 \item{ncpu}{the number of cores to use to make predictions. If
  \code{ncpu = 1} then predicitons will be made sequentially, otherwise for

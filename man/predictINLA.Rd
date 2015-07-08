@@ -4,9 +4,9 @@
 \alias{predictINLA}
 \title{Prediction from INLA MBG models}
 \usage{
-predictINLA(inla, data, mesh, coords = c("lat", "long"), type = c("link",
-  "response"), method = c("sample", "MAP"), n = 1, fixed = TRUE,
-  spatial = TRUE, fixed_subset = NULL, ncpu = 1)
+predictINLA(inla, data, mesh, coords = c("Longitude", "Latitude"),
+  type = c("link", "response"), method = c("sample", "MAP"), n = 1,
+  fixed = TRUE, spatial = TRUE, fixed_subset = NULL, ncpu = 1)
 }
 \arguments{
 \item{inla}{a fitted \code{\link{inla}} object with fixed effects terms

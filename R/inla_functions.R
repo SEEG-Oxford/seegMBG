@@ -52,7 +52,7 @@
 predictINLA <- function(inla,
                         data,
                         mesh,
-                        coords = c('lat', 'long'),
+                        coords = c('Longitude', 'Latitude'),
                         type = c('link', 'response'),
                         method = c('sample', 'MAP'),
                         n = 1,
@@ -102,7 +102,11 @@ predictINLA <- function(inla,
   # loop through draws making predictions
 
   # set up snowfall cluster
-  snowfall::sfInit(cpus = ncpu, parallel = ncpu > 1)
+  suppressMessages(snowfall::sfInit(cpus = ncpu, parallel = ncpu > 1))
+
+  if (ncpu > 1) {
+    message(sprintf('running predictions in parallel on %d cores', ncpu))
+  }
 
   results_list <- snowfall::sfLapply(1:n,
                                      predictAll,
@@ -114,10 +118,10 @@ predictINLA <- function(inla,
                                      spatial = spatial,
                                      fixed = fixed)
 
-  snowfall::sfStop()
+  suppressMessages(snowfall::sfStop())
 
   # combine the results into a matrix
-  results <- do.call(rbind, results_list)
+  results <- do.call(cbind, results_list)
 
   # optionally switch to response scale
   if (type == 'response')
@@ -375,6 +379,9 @@ predictSpatial <- function (params, coords, mesh, draw = 1) {
 
   # get the parameters
   spatial_par <- params$params[[draw]][spatial_idx]
+
+  # convert coords to matrix
+  coords <- as.matrix(coords)
 
   # define projector to new locations
   proj <- INLA::inla.mesh.projector(mesh, coords)

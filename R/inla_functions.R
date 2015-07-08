@@ -92,7 +92,7 @@ predictINLA <- function(inla,
 
   params <- getINLAParameters(inla = inla,
                               method = method,
-                              n = 2)
+                              n = 1000)
 
 
   # make predictions
@@ -265,11 +265,11 @@ getINLAParameters <- function (inla, method = c('sample', 'MAP'), n = 1) {
 #'  component of the linear predictor corresponding to the fixed effects.
 #'
 #' @param params an object of class \code{params} produced by
-#'  \code{\link{getINLAParameters}}
-#' @param data a dataframe with all the columns referred to in \code{params}
-#' @param draw which parameter set to use
+#'  \code{\link{getINLAParameters}}.
+#' @param data a dataframe with all the columns referred to in \code{params}.
+#' @param draw which parameter set to use.
 #' @param subset an optional character vector giving a subset of covariates
-#'  to include in the prediction
+#'  to include in the prediction.
 #'
 #' @return a vector of the same length as the number of rows in \code{data},
 #'  giving the values of the linear predictor corresponding to the records in
@@ -315,6 +315,49 @@ predictFixed <- function (params, data, draw = 1, subset = NULL) {
 
   # get the result
   ans <- as.vector(data %*% par)
+
+  # return it
+  return (ans)
+
+}
+
+
+#' @name predictSpatial
+#' @rdname predictSpatial
+#'
+#' @title Predict the Spatial Random Effect Part of an INLA MBG Model
+#'
+#' @description For a given set of paramters and new set of coordinates,
+#'  get the component of the linear predictor corresponding to the spatial
+#'  random effect, by linear interpolation.
+#'
+#' @param params an object of class \code{params} produced by
+#'  \code{\link{getINLAParameters}}.
+#' @param coords a two-column dataframe with the coordinates to evaluate the
+#'  spatial random effect at.
+#' @param mesh the \code{\link{inla.mesh}} object used to construct the spatial
+#'  random effect.
+#' @param draw which parameter set to use
+#'
+#' @return a vector of the same length as the number of rows in \code{coords},
+#'  giving the corresponding values of the spatial linear predictor
+#'
+predictSpatial <- function (params, coords, mesh, draw = 1) {
+
+  # check the draw number is valid
+  stopifnot(draw %in% seq_len(length(params$params)))
+
+  # get hyper spatial effect parameter indices
+  spatial_idx <- params$indices$spatial
+
+  # get the parameters
+  spatial_par <- params$params[[draw]][spatial_idx]
+
+  # define projector to new locations
+  proj <- inla.mesh.projector(mesh, coords)
+
+  # project the spatial random field
+  ans <- inla.mesh.project(proj, spatial_par)
 
   # return it
   return (ans)

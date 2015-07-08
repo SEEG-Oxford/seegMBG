@@ -8,14 +8,14 @@ predictFixed(params, data, draw = 1, subset = NULL)
 }
 \arguments{
 \item{params}{an object of class \code{params} produced by
-\code{\link{getINLAParameters}}}
+\code{\link{getINLAParameters}}.}
 
-\item{data}{a dataframe with all the columns referred to in \code{params}}
+\item{data}{a dataframe with all the columns referred to in \code{params}.}
 
-\item{draw}{which parameter set to use}
+\item{draw}{which parameter set to use.}
 
 \item{subset}{an optional character vector giving a subset of covariates
- to include in the prediction}
+ to include in the prediction.}
 }
 \value{
 a vector of the same length as the number of rows in \code{data},

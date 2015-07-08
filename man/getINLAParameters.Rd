@@ -23,7 +23,7 @@ have been fitted with the argument
  predictive posterior.}
 }
 \value{
-a list with three elements:
+An object of class \code{params}, being a list with three elements:
  \itemize{
    \item params parameters
    \item names parameter names

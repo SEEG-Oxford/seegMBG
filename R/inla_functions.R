@@ -78,32 +78,34 @@ predictINLA <- function(inla,
   # otherwise, get the function
   link <- get(paste0('inla.link.', link))
 
-              # ~~~
-              # extract coordinates
-              coords <- data[, coords]
+  # ~~~
+  # extract coordinates
+  coords <- data[, coords]
 
-              # ~~~
-              # find spatial term
-              spatial_term <- names(inla$summary.random)
-              stopifnot (length(spatial_term) == 1)
+  # ~~~
+  # find spatial term
+  spatial_term <- names(inla$summary.random)
+  stopifnot (length(spatial_term) == 1)
 
-              # ~~~
-              # get parameters
+  # ~~~
+  # get parameters
 
-              params <- getINLAParameters(inla = inla,
-                                          method = method,
-                                          n = n)
+  params <- getINLAParameters(inla = inla,
+                              method = method,
+                              n = n)
 
 
-              # make predictions
-              # loop, optionally in parallel
+  # make predictions
+  # loop, optionally in parallel
 
-              # optionally switch to response scale
-              if (type == 'response')
-                results <- link(results, inverse = TRUE)
 
-              # return results
-              return (results)
+
+  # optionally switch to response scale
+  if (type == 'response')
+    results <- link(results, inverse = TRUE)
+
+  # return results
+  return (results)
 
 }
 
@@ -130,7 +132,7 @@ predictINLA <- function(inla,
 #' @param n if \code{method = "sample"}, the number of samples to draw from the
 #'  predictive posterior.
 #'
-#' @return a list with three elements:
+#' @return An object of class \code{params}, being a list with three elements:
 #'  \itemize{
 #'    \item params parameters
 #'    \item names parameter names
@@ -248,6 +250,49 @@ getINLAParameters <- function (inla, method = c('sample', 'MAP'), n = 1) {
                              spatial_idx,
                              hyper_idx))
 
+  class(ans) <- 'params'
+
+  return (ans)
+
+}
+
+#' @name predictFixed
+#' @rdname predictFixed
+#'
+#' @title Predict the Fixed Effect Parts of an INLA MBG Model
+#'
+#' @description For a given set of paramters and new dataset, get the
+#'  component of the linear predictor corresponding to the fixed effects.
+#'
+#' @param params an object of class \code{params} produced by
+#'  \code{\link{getINLAParameters}}
+#' @param data a dataframe with all the columns referred to in \code{params}
+#'
+#' @return a vector of the same length as the number of rows in \code{data},
+#'  giving the values of the linear predictor corresponding to the records in
+#'  \code{data}
+predictFixed <- function (params, data) {
+  # still need to cope with factors and intercepts
+
+  # get fixed effect parameter index
+  idx <- param$indices$fixed_idx
+
+  # get the fixed effects parameter names
+  names <- params$names[idx]
+
+  # check they're all in data
+  stopifnot(all(names %in% names(data)))
+
+  # extract the correct columns
+  data <- data[, names]
+
+  # get the parameters
+  par <- params[idx]
+
+  # get the result
+  ans <- data %*% par
+
+  # return it
   return (ans)
 
 }

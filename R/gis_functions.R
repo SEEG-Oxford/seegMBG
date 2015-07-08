@@ -32,16 +32,16 @@ bufferMask <- function (mask, points, buffer = 0) {
   mask <- mask * 0
 
   # get cell numbers for all points
-  points_cells <- extract(mask,
+  points_cells <- raster::extract(mask,
                           points,
                           cellnumbers = TRUE)[, 1]
 
   # find spatially unique records (on grid)
   unique_idx <- !duplicated(points_cells)
 
-  # find cvalues (and numbers) of cells falling under buffered, spatially
+  # find values (and numbers) of cells falling under buffered, spatially
   # unique points
-  mask_vals <- extract(mask,
+  mask_vals <- raster::extract(mask,
                        points[unique_idx, ],
                        cellnumbers = TRUE,
                        buffer = buffer)
@@ -95,7 +95,7 @@ insertRaster <- function (raster, new_vals, idx = NULL) {
 
   # create results raster
   n <- ncol(new_vals)
-  raster_new <- brick(replicate(n,
+  raster_new <- raster::brick(replicate(n,
                               raster[[1]],
                               simplify = FALSE))
   names(raster_new) <- colnames(new_vals)

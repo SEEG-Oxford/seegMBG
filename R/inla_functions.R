@@ -92,7 +92,7 @@ predictINLA <- function(inla,
 
   params <- getINLAParameters(inla = inla,
                               method = method,
-                              n = n)
+                              n = 2)
 
 
   # make predictions
@@ -244,11 +244,11 @@ getINLAParameters <- function (inla, method = c('sample', 'MAP'), n = 1) {
   }
 
   # return the results as a list
-  ans <- list(params,
+  ans <- list(params = params,
               names = param_names,
-              indices = list(fixed_idx,
-                             spatial_idx,
-                             hyper_idx))
+              indices = list(fixed = fixed_idx,
+                             spatial = spatial_idx,
+                             hyper = hyper_idx))
 
   class(ans) <- 'params'
 
@@ -267,30 +267,54 @@ getINLAParameters <- function (inla, method = c('sample', 'MAP'), n = 1) {
 #' @param params an object of class \code{params} produced by
 #'  \code{\link{getINLAParameters}}
 #' @param data a dataframe with all the columns referred to in \code{params}
+#' @param draw which parameter set to use
+#' @param subset an optional character vector giving a subset of covariates
+#'  to include in the prediction
 #'
 #' @return a vector of the same length as the number of rows in \code{data},
 #'  giving the values of the linear predictor corresponding to the records in
 #'  \code{data}
-predictFixed <- function (params, data) {
+predictFixed <- function (params, data, draw = 1, subset = NULL) {
   # still need to cope with factors and intercepts
 
+  # check the draw number is valid
+  stopifnot(draw %in% seq_len(length(params$params)))
+
   # get fixed effect parameter index
-  idx <- param$indices$fixed_idx
+  idx <- params$indices$fixed
 
   # get the fixed effects parameter names
   names <- params$names[idx]
 
-  # check they're all in data
+  # apply subset if needed
+  if (!is.null(subset)) {
+
+    # check they're in names
+    stopifnot(all(subset %in% names))
+
+    # find them
+    subset_idx <- match(subset, names)
+
+    # correct names and idx
+    idx <- idx[subset_idx]
+    names <- names[subset_idx]
+
+  }
+
+  # check the names are all in data
   stopifnot(all(names %in% names(data)))
 
   # extract the correct columns
-  data <- data[, names]
+  data <- as.matrix(data[, names])
+
+  # copy INLA in setting NAs to 0s
+  data[is.na(data)] <- 0
 
   # get the parameters
-  par <- params[idx]
+  par <- params$params[[draw]][idx]
 
   # get the result
-  ans <- data %*% par
+  ans <- as.vector(data %*% par)
 
   # return it
   return (ans)

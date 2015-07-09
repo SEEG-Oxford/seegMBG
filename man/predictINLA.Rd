@@ -55,7 +55,7 @@ to include in the fixed effects prediction.}
  \code{n > 1} a snowfall cluster will be initiated and predictions run in
  parallel.}
 
-\item{raster}{a \code{RasterBrick} object containing the fixed effects
+\item{raster}{a \code{Raster*} object containing the fixed effects
 covariates to use for prediction.}
 
 \item{constants}{an optional named list giving constant values for named
@@ -68,9 +68,9 @@ do \code{constants = list(int = 1)}.}
 predictINLA: a matrix with the same number of rows as \code{data} giving the
  predicted values at these locations
 
-predictRasterINLA: a RasterBrick (if \code{method = 'sample'}) or
- RasterLayer (if \code{method = 'MAP'}) giving pixel-level predictions
- from \code{inla}.
+predictRasterINLA: a \code{RasterBrick} or \code{RasterStack}
+ (if \code{method = 'sample'}) or \code{RasterLayer} (if
+ \code{method = 'MAP'}) giving pixel-level predictions from \code{inla}.
 }
 \description{
 Given a fitted \code{\link{inla}} object for a spatial or

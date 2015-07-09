@@ -135,7 +135,7 @@ predictINLA <- function(inla,
 #' @name predictRasterINLA
 #' @rdname predictINLA
 #'
-#' @param raster a \code{RasterBrick} object containing the fixed effects
+#' @param raster a \code{Raster*} object containing the fixed effects
 #'  covariates to use for prediction.
 #' @param constants an optional named list giving constant values for named
 #'  fixed effects in \code{inla}. E.g. for an intercept term names \code{int},
@@ -144,11 +144,101 @@ predictINLA <- function(inla,
 #'
 #' @export
 #'
-#' @return predictRasterINLA: a RasterBrick (if \code{method = 'sample'}) or
-#'  RasterLayer (if \code{method = 'MAP'}) giving pixel-level predictions
-#'  from \code{inla}.
+#' @return predictRasterINLA: a \code{RasterBrick} or \code{RasterStack}
+#'  (if \code{method = 'sample'}) or \code{RasterLayer} (if
+#'  \code{method = 'MAP'}) giving pixel-level predictions from \code{inla}.
 
 predictRasterINLA <- function (inla, raster, mesh, constants = list(), ...) {
+
+  # ~~~~~~~~~~~~~
+  # check incoming data
+
+  # data types
+  stopifnot(inherits(inla, 'inla'))
+  stopifnot(inla$model.random == 'SPDE2 model')
+  stopifnot(inherits(raster, c('RasterBrick', 'RasterStack', 'RasterLayer')))
+  stopifnot(inherits(mesh, 'inla.mesh'))
+  stopifnot(inherits(constants, 'list'))
+
+  # ~~~
+  # named fixed effects
+
+  # get fixed effect provided by the user
+  all_names <- c(names(raster), names(constants))
+
+  # check none are missing
+  missing <- !(inla$names.fixed %in% all_names)
+  if (any(missing)) {
+    stop (sprintf('The following named fixed effects are not in raster or constants %d', inla$names.fixed[missing]))
+  }
+
+  # check there are no duplicates
+  if (any(duplicated(all_names))) {
+    stop ('There are duplicate named fixed effects covariates between raster and constants' )
+  }
+
+  # ~~~
+  # constants
+
+  # check they're all named
+  stopifnot(length(constants) == length(names(constants)))
+
+  # check they all have length one
+  len <- unlist(lapply(constants, length))
+  stopifnot(all(len == 1))
+
+  # ~~~~~~~~~~~~~
+  # prepare data
+
+  # find valid cells
+  cells <- notMissingIdx(raster[[1]])
+
+  # get values at these locations
+  data <- getValues(raster)[cells, ]
+
+  # find bad pixels (with any NA values)
+  bad_cells <- badRows(data)
+
+  # remove them from the cell index and data
+  cells <- cells[!bad_cells]
+  data <- data[!bad_cells, ]
+
+  # get a template RasterLayer for prediction
+  template_raster <- raster[[1]]
+  template_raster[] <- NA
+
+  # remove raster to save memory
+  rm(raster)
+
+  # ~~~~~~~~~~~
+  # add all data for prediction
+
+  # convert data into a dataframe
+  data <- data.frame(data)
+
+  # get the prediction coordinates
+  coords <- xyFromCell(template_raster, cells)
+  colnames(coords) <- c('Longitude', 'Latitude')
+
+  # add the constants and coordinates in
+  data <- cbind(data, constants, coords)
+
+  # ~~~~~~~~~~~
+  # make the predictions!
+
+  preds <- predictINLA(inla = inla,
+                      data = data,
+                      mesh = mesh,
+                      coords = c('Longitude', 'Latitude'),
+                      ...)
+
+  # put these into the template raster
+  pred_raster <- insertRaster(raster = template_raster,
+                              new_vals = preds,
+                              idx = cells)
+
+  # return the prediction rasters
+  return (pred_raster)
 
 }
 

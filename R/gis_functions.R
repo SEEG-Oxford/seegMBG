@@ -32,16 +32,16 @@ bufferMask <- function (mask, points, buffer = 0) {
   mask <- mask * 0
 
   # get cell numbers for all points
-  points_cells <- extract(mask,
+  points_cells <- raster::extract(mask,
                           points,
                           cellnumbers = TRUE)[, 1]
 
   # find spatially unique records (on grid)
   unique_idx <- !duplicated(points_cells)
 
-  # find cvalues (and numbers) of cells falling under buffered, spatially
+  # find values (and numbers) of cells falling under buffered, spatially
   # unique points
-  mask_vals <- extract(mask,
+  mask_vals <- raster::extract(mask,
                        points[unique_idx, ],
                        cellnumbers = TRUE,
                        buffer = buffer)
@@ -95,7 +95,7 @@ insertRaster <- function (raster, new_vals, idx = NULL) {
 
   # create results raster
   n <- ncol(new_vals)
-  raster_new <- brick(replicate(n,
+  raster_new <- raster::brick(replicate(n,
                               raster[[1]],
                               simplify = FALSE))
   names(raster_new) <- colnames(new_vals)
@@ -106,5 +106,77 @@ insertRaster <- function (raster, new_vals, idx = NULL) {
   }
 
   return (raster_new)
+
+}
+
+
+#' @name ll2cart
+#' @rdname ll2cart
+#'
+#' @title Convert from Latitude/Longitude to Cartesian Coordinates
+#'
+#' @description Convert coordinates given as latitude and longitude to
+#'  three-dimensional coordinates on a sphere. This can be used to account
+#'  for great-circle distances when fitting spatial models.
+#'
+#' @param longlat a matrix or dataframe giving the longitudes (first column)
+#'  and latitudes (second column) of a set of locations
+#' @param radius radius of the sphere in on which the Cartesian coodinates are
+#'  defined. By default the approximate radius of the earth in kilometres.
+#'
+#' @export
+#'
+#' @return ll2cart: a three-column dataframe giving the x, y and z positions
+#'  for each set of coordinates
+#'
+ll2cart <- function (longlat, radius = 6371) {
+
+  # check inputs
+  stopifnot(is.finite(radius) & radius > 0)
+  stopifnot(inherits(longlat, 'matrix') | inherits(longlat, 'data.frame'))
+  stopifnot(ncol(longlat) == 2)
+
+  # extract required columns
+  longitude <- longlat[, 1]
+  latitude <- longlat[, 2]
+
+  # convert
+  ans <- data.frame(x = radius * cos(latitude) * cos(longitude),
+                    y = radius * cos(latitude) * sin(longitude),
+                    z = radius * sin(latitude))
+
+  return (ans)
+
+}
+
+
+#' @name cart2ll
+#' @rdname ll2cart
+#'
+#' @param xyz a matrix or dataframe giving the cartesian coordinates
+#'  (in order x, y, z) of a set of locations
+#'
+#' @export
+#'
+#' @return cart2ll: a two-column dataframe giving the longitudes and latitudes
+#'  for each set of coordinates
+#'
+cart2ll <- function (xyz, radius = 6371) {
+
+  # check inputs
+  stopifnot(is.finite(radius) & radius > 0)
+  stopifnot(inherits(longlat, 'matrix') | inherits(longlat, 'data.frame'))
+  stopifnot(ncol(xyz) == 3)
+
+  # extract columns
+  x <- xyz[, 1]
+  y <- xyz[, 2]
+  z <- xyz[, 3]
+
+  # convert
+  ans <- data.frame(longitude = atan2(y, x),
+                    latitude = asin(z / radius))
+
+  return (ans)
 
 }

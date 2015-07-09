@@ -13,7 +13,7 @@ integer or logical values, or a numeric data frame.}
 \item{na.rm}{logical. Should missing values (including NaN) be omitted from
 the calculations?}
 
-\item{dims}{integer: Which dimensions are regarded as ‘rows’ to
+\item{dims}{integer: Which dimensions are regarded as rows to
  sum over. The product is over dimensions dims+1.}
 }
 \value{

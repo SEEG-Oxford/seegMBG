@@ -1,5 +1,6 @@
 # Miscellaneous utility functions
 
+
 #' @name badRows
 #' @rdname badRows
 #'
@@ -97,6 +98,7 @@ getRHS <- function(f, split = TRUE) {
 #' @param x a \code{formula} object with both response and predictor terms
 #'
 #' @param y a \code{formula} object with predictor terms (response ignored)
+#' @param \dots further arguments passed to or from other methods.
 #'
 #' @return a \code{formula} with the response form \code{x} and the predictors
 #'  from both \code{x} and code{y}
@@ -148,54 +150,6 @@ merge.formula <- function(x, y, ...){
   return (ans)
 }
 
-
-# get formula left-hand-side
-getLHS <- function(f) {
-
-  # check input
-  stopifnot(inherits(f, 'formula'))
-
-  # get element
-  if(length(f) == 2) {
-    stop ('this formula has no left-hand side')
-  } else {
-    ans <- f[[2]]
-  }
-
-  # convert to string
-  ans <- deparse(ans)
-
-  return (ans)
-}
-
-# get formula right-hand-side
-getRHS <- function(f, split = TRUE) {
-
-  # check input
-  stopifnot(inherits(f, 'formula'))
-
-  # get element
-  if(length(f) == 2) {
-    ans <- f[[2]]
-  } else if (length(f) == 3) {
-    ans <- f[[3]]
-  } else {
-    stop ('I have no idea what this is')
-  }
-
-  # convert to string
-  ans <- deparse(ans)
-
-
-  # optionally split up predictors
-  if (split) {
-    ans <- strsplit(ans, '\\+')[[1]]
-  }
-
-  return (ans)
-
-}
-
 #' @name expand
 #' @rdname expand
 #'
@@ -241,7 +195,7 @@ expand <- function(x, n) {
 #'  integer or logical values, or a numeric data frame.
 #' @param na.rm logical. Should missing values (including NaN) be omitted from
 #'  the calculations?
-#' @param dims integer: Which dimensions are regarded as ‘rows’ to
+#' @param dims integer: Which dimensions are regarded as rows to
 #'  sum over. The product is over dimensions dims+1.
 #'
 #' @export

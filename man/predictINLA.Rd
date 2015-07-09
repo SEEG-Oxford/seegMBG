@@ -2,11 +2,14 @@
 % Please edit documentation in R/inla_functions.R
 \name{predictINLA}
 \alias{predictINLA}
+\alias{predictRasterINLA}
 \title{Prediction from INLA MBG models}
 \usage{
 predictINLA(inla, data, mesh, coords = c("Longitude", "Latitude"),
   type = c("link", "response"), method = c("sample", "MAP"), n = 1,
   fixed = TRUE, spatial = TRUE, fixed_subset = NULL, ncpu = 1)
+
+predictRasterINLA(inla, raster, mesh, constants = list(), ...)
 }
 \arguments{
 \item{inla}{a fitted \code{\link{inla}} object with fixed effects terms
@@ -51,15 +54,28 @@ to include in the fixed effects prediction.}
  \code{ncpu = 1} then predicitons will be made sequentially, otherwise for
  \code{n > 1} a snowfall cluster will be initiated and predictions run in
  parallel.}
+
+\item{raster}{a \code{RasterBrick} object containing the fixed effects
+covariates to use for prediction.}
+
+\item{constants}{an optional named list giving constant values for named
+fixed effects in \code{inla}. E.g. for an intercept term names \code{int},
+do \code{constants = list(int = 1)}.}
+
+\item{\dots}{arguments to be passed to \code{predictINLA}.}
 }
 \value{
-a matrix with the same number of rows as \code{data} giving the
+predictINLA: a matrix with the same number of rows as \code{data} giving the
  predicted values at these locations
+
+predictRasterINLA: a RasterBrick (if \code{method = 'sample'}) or
+ RasterLayer (if \code{method = 'MAP'}) giving pixel-level predictions
+ from \code{inla}.
 }
 \description{
 Given a fitted \code{\link{inla}} object for a spatial or
  spatio-temporal geostatistical model, make predictions to a new dataset
- either from the maximum \emph{a posterior} parameter set, or as samples
- from the predictive posterior.
+ or \code{RasterBrick} either from the maximum \emph{a posterior} parameter
+ set, or as samples from the predictive posterior.
 }
 

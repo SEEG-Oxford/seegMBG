@@ -7,8 +7,8 @@
 #'
 #' @description Given a fitted \code{\link{inla}} object for a spatial or
 #'  spatio-temporal geostatistical model, make predictions to a new dataset
-#'  either from the maximum \emph{a posterior} parameter set, or as samples
-#'  from the predictive posterior.
+#'  or \code{RasterBrick} either from the maximum \emph{a posterior} parameter
+#'  set, or as samples from the predictive posterior.
 #'
 #' @param inla a fitted \code{\link{inla}} object with fixed effects terms
 #'  and a spatial or spatio-temporal random effect model. If
@@ -46,7 +46,7 @@
 #' @export
 #' @import snowfall
 #'
-#' @return a matrix with the same number of rows as \code{data} giving the
+#' @return predictINLA: a matrix with the same number of rows as \code{data} giving the
 #'  predicted values at these locations
 #'
 predictINLA <- function(inla,
@@ -129,6 +129,26 @@ predictINLA <- function(inla,
 
   # return results
   return (results)
+
+}
+
+#' @name predictRasterINLA
+#' @rdname predictINLA
+#'
+#' @param raster a \code{RasterBrick} object containing the fixed effects
+#'  covariates to use for prediction.
+#' @param constants an optional named list giving constant values for named
+#'  fixed effects in \code{inla}. E.g. for an intercept term names \code{int},
+#'  do \code{constants = list(int = 1)}.
+#' @param \dots arguments to be passed to \code{predictINLA}.
+#'
+#' @export
+#'
+#' @return predictRasterINLA: a RasterBrick (if \code{method = 'sample'}) or
+#'  RasterLayer (if \code{method = 'MAP'}) giving pixel-level predictions
+#'  from \code{inla}.
+
+predictRasterINLA <- function (inla, raster, mesh, constants = list(), ...) {
 
 }
 

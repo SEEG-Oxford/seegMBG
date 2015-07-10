@@ -73,9 +73,27 @@ predictRasterINLA: a \code{RasterBrick} or \code{RasterStack}
  \code{method = 'MAP'}) giving pixel-level predictions from \code{inla}.
 }
 \description{
-Given a fitted \code{\link{inla}} object for a spatial or
- spatio-temporal geostatistical model, make predictions to a new dataset
+Given a fitted \code{\link{inla}} object for a spatial
+ geostatistical model, make predictions to a new dataset
  or \code{RasterBrick} either from the maximum \emph{a posterior} parameter
  set, or as samples from the predictive posterior.
+
+ Note that this function is only designed to work with a specific type of
+ geostatistical model, fitted in a specific way and is likely to produce
+ unexpected (i.e. wrong) results when used with other types of model.
+
+ Examples of things that aren't allowed are:
+   \itemize{
+     \item prediction using factor (discrete) variables.
+      Though it should be possible to manually expand the factors into the
+      correctly named dummy variables (see \code{inla$names.fixed} for the
+      expected names) and predict to these. This includes the use of iid
+      random effects, unfortunately.
+     \item prediction using models constructed with anything other than an
+      spde2 spatial model.
+     \item spatial models fitted using 3D Cartesian coordinates (to be
+      added soon).
+     \item space-time models (to be added soon).
+   }
 }
 

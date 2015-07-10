@@ -5,10 +5,28 @@
 #'
 #' @title Prediction from INLA MBG models
 #'
-#' @description Given a fitted \code{\link{inla}} object for a spatial or
-#'  spatio-temporal geostatistical model, make predictions to a new dataset
+#' @description Given a fitted \code{\link{inla}} object for a spatial
+#'  geostatistical model, make predictions to a new dataset
 #'  or \code{RasterBrick} either from the maximum \emph{a posterior} parameter
 #'  set, or as samples from the predictive posterior.
+#'
+#'  Note that this function is only designed to work with a specific type of
+#'  geostatistical model, fitted in a specific way and is likely to produce
+#'  unexpected (i.e. wrong) results when used with other types of model.
+#'
+#'  Examples of things that aren't allowed are:
+#'    \itemize{
+#'      \item prediction using factor (discrete) variables.
+#'       Though it should be possible to manually expand the factors into the
+#'       correctly named dummy variables (see \code{inla$names.fixed} for the
+#'       expected names) and predict to these. This includes the use of iid
+#'       random effects, unfortunately.
+#'      \item prediction using models constructed with anything other than an
+#'       spde2 spatial model.
+#'      \item spatial models fitted using 3D Cartesian coordinates (to be
+#'       added soon).
+#'      \item space-time models (to be added soon).
+#'    }
 #'
 #' @param inla a fitted \code{\link{inla}} object with fixed effects terms
 #'  and a spatial or spatio-temporal random effect model. If
@@ -69,11 +87,26 @@ predictINLA <- function(inla,
   stopifnot(inherits(inla, 'inla'))
   stopifnot(inla$model.random == 'SPDE2 model')
   stopifnot(inherits(data, 'data.frame'))
+  stopifnot(all(sapply(data, class) != 'factor'))
   stopifnot(inherits(mesh, 'inla.mesh'))
 
   # check incoming data shapes
   stopifnot(length(coords) == 2 & all(coords %in% names(data)))
   stopifnot(all(inla$names.fixed %in% names(data)))
+
+  # throw an error if there's a default model intercept
+  # - supposedly messes with the spde stuff
+  if ('(Intercept)' %in% inla$names.fixed) {
+    stop('This model appears to contain an INLA intercept term. \
+         These should not be used with spde models apparently.')
+  }
+
+  # only use one cpu if MAP
+  if (method == 'MAP' & ncpu > 1) {
+    warning('parallel prediction is not currently possible for MAP \
+            estimation. Running sequentially instead.')
+    ncpu <- 1
+  }
 
   # ~~~~~~~~~~~~~~~~~~
   # get required data

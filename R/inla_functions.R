@@ -506,13 +506,20 @@ predictFixed <- function (params, data, draw = 1, subset = NULL) {
 #' @param mesh the \code{\link{inla.mesh}} object used to construct the spatial
 #'  random effect.
 #' @param draw which parameter set to use
+#' @param time if a space-time model, the index to the discrete time variable
+#'  for which spatial predictions are to be made in this round.
+#' @param n_time if a space-time model, the length of the discrete time
+#'  variable used in the model.
 #'
 #' @import INLA
 #'
 #' @return a vector of the same length as the number of rows in \code{coords},
 #'  giving the corresponding values of the spatial linear predictor
 #'
-predictSpatial <- function (params, coords, mesh, draw = 1) {
+predictSpatial <- function (params, coords, mesh, draw = 1, time = NULL, n_time = NULL) {
+
+  # check that n_time is present if time is not null
+  if (!is.null(time) && is.nul(n_time))
 
   # check the draw number is valid
   stopifnot(draw %in% seq_len(length(params$params)))
@@ -526,16 +533,36 @@ predictSpatial <- function (params, coords, mesh, draw = 1) {
   # convert coords to matrix
   coords <- as.matrix(coords)
 
-  # define projector to new locations
-  proj <- INLA::inla.mesh.projector(mesh, coords)
+  # do the projection
+  if (is.null(time)) {
+    # if it's not temporally explicit
 
-  # project the spatial random field
-  ans <- INLA::inla.mesh.project(proj, spatial_par)
+    # define projector to new locations
+    proj <- INLA::inla.mesh.projector(mesh, coords)
+
+    # project the spatial random field
+    ans <- INLA::inla.mesh.project(proj, spatial_par)
+
+  } else {
+    # if it's for a particular year
+
+    # build the A matrix directly for the year in question
+    A <- INLA::inla.spde.make.A(mesh = mesh,
+                               loc = coords,
+                               group = rep(time, nrow(coords)),
+                               n.group = ny_time)
+
+    # linearly project the spatial random field
+    ans <- as.vector(A %*% spatial_par)
+
+  }
 
   # return it
   return (ans)
 
 }
+
+
 
 #' @name predictAll
 #' @rdname predictAll

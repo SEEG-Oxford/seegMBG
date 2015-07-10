@@ -232,6 +232,7 @@ rowProds <- function(x, na.rm = FALSE, dims = 1) {
 #'  or quoted.
 #' @param margin over which margin should the operation take place
 #'  (i.e. which margin matches \code{index}).
+#' @param \dots other arguments to be passed to \code{fun}.
 #'
 #' @export
 #'
@@ -244,10 +245,10 @@ rowProds <- function(x, na.rm = FALSE, dims = 1) {
 #' x <- expand(rnorm(5), 3)
 #' aggMatrix(x, c(1, 1, 1, 2, 2))
 #'
-aggMatrix <- function(x, index, fun = sum, margin = 1) {
+aggMatrix <- function(x, index, fun = sum, margin = 1, ...) {
   # aggregate rows of a matrix for dataframe using function and according to
   # index
-  agg <- function(x) tapply(x, INDEX = index, FUN = fun)
+  agg <- function(x) tapply(x, INDEX = index, FUN = fun, ...)
   margin <- ifelse(margin == 1, 2, 1)
   apply(x, margin, agg)
 }

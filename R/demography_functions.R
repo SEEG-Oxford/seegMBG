@@ -205,8 +205,8 @@ periodMortality <- function (age_death,
     index <- windows_lower < ages_upper[i] &
       windows_upper > ages_lower[i]
 
-    mortality <- 1 - rowProds(survival_rates[, index])
-    sample_size <- rowSums(exposed_agg[, index])
+    mortality <- 1 - rowProds(survival_rates[, index, drop = FALSE])
+    sample_size <- rowSums(exposed_agg[, index, drop = FALSE])
 
     ans[[i]] <- data.frame(mortality, sample_size)
 

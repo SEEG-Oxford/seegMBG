@@ -248,6 +248,7 @@ periodMortality <- function (age_death,
 #'  to end the period, either vector or scalar.
 #'  I.e. the period runs from \code{period + delay}
 #'  months to \code{delay} months before the interview month.
+#' @param verbose whether to regularly report the stage of the analysis
 #'
 #' @export
 #'
@@ -270,7 +271,8 @@ periodTabulate <- function (age_death,
                             windows_upper = c(0, 2, 5, 11, 23, 35, 47, 59),
                             period = 60,
                             nperiod = 1,
-                            delay = max(windows_upper - windows_lower)) {
+                            delay = max(windows_upper - windows_lower),
+                            verbose = TRUE) {
 
   # get unique clusters
   clusters <- unique(cluster_id)
@@ -317,6 +319,10 @@ periodTabulate <- function (age_death,
 
   for (p in 1:np) {
 
+    # notify the user
+    if (verbose & p > 1) message(paste('processing period', p))
+
+
     # get the extra delay matrix
     extra_delay_mat <- period_mat * (p - 1)
 
@@ -325,6 +331,9 @@ periodTabulate <- function (age_death,
 
     # loop through cohorts
     for (cohort in c('A', 'B', 'C')) {
+
+      # notify the user
+      if (verbose) message(paste('processing cohort', cohort))
 
       # cohort end date matrix
       start_mat <- switch(cohort,

@@ -6,7 +6,8 @@
 \usage{
 periodTabulate(age_death, birth_int, cluster_id, windows_lower = c(0, 1, 3, 6,
   12, 24, 36, 48), windows_upper = c(0, 2, 5, 11, 23, 35, 47, 59),
-  period = 60, nperiod = 1, delay = max(windows_upper - windows_lower))
+  period = 60, nperiod = 1, delay = max(windows_upper - windows_lower),
+  verbose = TRUE)
 }
 \arguments{
 \item{age_death}{numeric vector giving the age of death in months of each
@@ -31,9 +32,11 @@ if \code{period = 12} and \code{nperiod = 3}, numbers will be returned for
 periods 0-12, 13-24 and 25-36 months prior to the interview (plus delay).}
 
 \item{delay}{the length of time in months prior to the interview date
- to end the period, either vector or scalar.
- I.e. the period runs from \code{period + delay}
- months to \code{delay} months before the interview month.}
+to end the period, either vector or scalar.
+I.e. the period runs from \code{period + delay}
+months to \code{delay} months before the interview month.}
+
+\item{verbose}{whether to regularly report the stage of the analysis}
 }
 \value{
 a dataframe with number of rows equal to all combinations of

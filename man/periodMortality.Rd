@@ -48,10 +48,9 @@ zeros and indeterminate values.}
 \item{\dots}{other arguments to pass to \code{INLA::inla}}
 }
 \value{
-a list with the same number of elements as \code{ages}, each
- element being a dataframe containing the estimated mortality rates
- and effective sample size (weighted number exposed in each suvival
-window).
+a dataframe with the same number of columns as elements in
+ \code{ages_lower}, each column giving the estimated mortality rates for
+ the corresponding age bin in each cluster.
 }
 \description{
 Compute child mortality estimates using the DHS three-cohort

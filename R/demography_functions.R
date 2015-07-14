@@ -38,10 +38,9 @@
 #'
 #' @import INLA
 #'
-#' @return a list with the same number of elements as \code{ages}, each
-#'  element being a dataframe containing the estimated mortality rates
-#'  and effective sample size (weighted number exposed in each suvival
-#' window).
+#' @return a dataframe with the same number of columns as elements in
+#'  \code{ages_lower}, each column giving the estimated mortality rates for
+#'  the corresponding age bin in each cluster.
 #'
 periodMortality <- function (age_death,
                              birth_int,
@@ -56,8 +55,7 @@ periodMortality <- function (age_death,
                              verbose = TRUE,
                              ...) {
 
-  if (verbose) message('formatting data')
-
+  # check incoming data
   n <- length(age_death)
   nw <- length(windows_lower)
   na <- length(ages_lower)
@@ -74,9 +72,6 @@ periodMortality <- function (age_death,
   stopifnot(length(windows_upper) == nw)
   stopifnot(length(ages_upper) == na)
 
-  # get unique clusters
-  clusters <- unique(cluster_id)
-
   if (any(windows_upper[-1] <= windows_lower[-nw])) {
     stop ('windows_upper and windows_lower appear to overlap')
   }
@@ -85,89 +80,30 @@ periodMortality <- function (age_death,
     stop ('ages_upper and ages_lower appear to overlap')
   }
 
-  # window age limit matrices
-  upper_mat <- t(expand(windows_upper, n))
-  lower_mat <- t(expand(windows_lower, n))
+  # tabulate data for analysis
+  df <- periodTabulate(age_death = age_death,
+                       birth_int = birth_int,
+                       cluster_id = cluster_id,
+                       windows_lower = windows_lower,
+                       windows_upper = windows_upper,
+                       period = period,
+                       nperiod = 1,
+                       delay = delay,
+                       verbose = verbose)
 
-  # delay and period matrices
-  delay_mat <- expand(delay, nw)
-  period_mat <- expand(period, nw)
-
-  # data matrices
-  age_death <- expand(age_death, nw)
-  birth_int <- expand(birth_int, nw)
-
-  # empty objects to store total deaths and exposures for each window
-  deaths <- exposed <- 0
-
-  # loop through cohorts
-  for(cohort in c('A', 'B', 'C')) {
-
-    if (verbose) message(paste('processing cohort', cohort))
-
-    # cohort end date matrix
-    start_mat <- switch(cohort,
-                        B = upper_mat,
-                        A = period_mat + lower_mat,
-                        C = lower_mat )
-
-    # cohort start date matrix
-    end_mat <- switch(cohort,
-                      B = period_mat + lower_mat,
-                      A = period_mat + upper_mat,
-                      C = upper_mat)
-
-    # and add gap between end of period and the interview date
-    start_mat <- start_mat + delay_mat
-    end_mat <- end_mat + delay_mat
-
-    # add effective number exposed
-    exposed_cohort <- (birth_int <= end_mat &  # entered cohort before cohort end date
-                         birth_int >= start_mat &  # entered cohort after cohort start date
-                         age_death >= lower_mat) # alive at start of cohort
-
-    # and effective number that died
-    deaths_cohort <- (exposed_cohort > 0 &  # actually exposed this time
-                        age_death <= upper_mat &  # died before end of window
-                        age_death >= lower_mat)  # died after start of window
-
-    # get the cohort weight
-    weight <- ifelse(cohort == 'B', 1, 0.5)
-
-    # otherwise accumulate these raw numbers with weights
-    exposed <- exposed + exposed_cohort * weight
-    deaths <- deaths + deaths_cohort * weight
-
-  } # cohort loop
-
-  # check they're all sane
-  stopifnot(all(exposed <= 2))
-  stopifnot(all(deaths <= 2))
-
-  # aggregate by cluster
-  exposed_agg <- aggMatrix(exposed, cluster_id)
-  deaths_agg <- aggMatrix(deaths, cluster_id)
+  # fit the required model
 
   if (glm) {
 
-    # set up the glm data frame
-    if (verbose) message('formatting data for glm')
-
     # round up the deaths and exposures
-    exposed_agg <- round(exposed_agg)
-    deaths_agg <- round(deaths_agg)
-
-    # create long format dataframe by stacking on top of each other
-    # if using a glm, set up dataframe
-    df <- data.frame(died = as.vector(deaths_agg),
-                     exposed = as.vector(exposed_agg),
-                     window = rep(1:nw, each = length(clusters)),
-                     cluster = rep(clusters, nw))
-
-    if (verbose) message('running glm')
+    df$exposed <- ceiling(df$exposed)
+    df$died <- ceiling(df$died)
 
     # define the formula
-    f <- died ~ 1 + f(window, model = 'iid') + f(cluster, model = 'iid')
+    f <- died ~ 1 + f(age_bin, model = 'iid') + f(cluster_id, model = 'iid')
+
+    # notify the user the model's running
+    if (verbose) message('running glm')
 
     # fit the model
     m <- inla(f,
@@ -181,15 +117,20 @@ periodMortality <- function (age_death,
     p <- m$summary.fitted.values$mode
 
     # reformat to a matrix
-    p <- matrix(p, ncol = nw)
+    p <- matrix(p, ncol = nw, byrow = TRUE)
 
     # get the fitted values
-    survival_rates <- 1 - p  # matrix of cluster by window survival probabilities
+    survival_mat <- 1 - p  # matrix of cluster by window survival probabilities
 
   } else {
 
     # get raw survival rates for each window, for each cluster
-    survival_rates <- 1 - deaths_agg / exposed_agg
+    survival_rates <- 1 - df$died / df$exposed
+
+    # reformat as a matrix
+    survival_mat <- matrix(survival_rates,
+                           ncol = nw,
+                           byrow = TRUE)
 
   }
 
@@ -204,15 +145,18 @@ periodMortality <- function (age_death,
     index <- windows_lower < ages_upper[i] &
       windows_upper > ages_lower[i]
 
-    mortality <- 1 - rowProds(survival_rates[, index, drop = FALSE])
-    sample_size <- rowSums(exposed_agg[, index, drop = FALSE])
+    mortality <- 1 - rowProds(survival_mat[, index, drop = FALSE])
 
-    ans[[i]] <- data.frame(mortality, sample_size)
+    ans[[i]] <- mortality
 
   }
 
-  # add names to list
+  # convert to a dataframe
+  ans <- data.frame(ans)
+
+  # add names
   names(ans) <- paste0('ages_', ages_lower, '_', ages_upper)
+  rownames(ans) <- unique(df$cluster_id)
 
   # return this
   return (ans)
@@ -320,7 +264,7 @@ periodTabulate <- function (age_death,
   for (p in 1:np) {
 
     # notify the user
-    if (verbose & p > 1) message(paste('processing period', p))
+    if (verbose & np > 1) message(paste('\nprocessing period', p))
 
 
     # get the extra delay matrix
@@ -383,10 +327,6 @@ periodTabulate <- function (age_death,
     ans$died[ans$period == p] <- as.vector(t(deaths_agg))
 
   }
-
-  # round the columns up
-  ans$exposed <- ceiling(ans$exposed)
-  ans$died <- ceiling(ans$died)
 
   # return the combined data
   return (ans)

@@ -33,8 +33,8 @@ bufferMask <- function (mask, points, buffer = 0) {
 
   # get cell numbers for all points
   points_cells <- raster::extract(mask,
-                          points,
-                          cellnumbers = TRUE)[, 1]
+                                  points,
+                                  cellnumbers = TRUE)[, 1]
 
   # find spatially unique records (on grid)
   unique_idx <- !duplicated(points_cells)
@@ -42,9 +42,9 @@ bufferMask <- function (mask, points, buffer = 0) {
   # find values (and numbers) of cells falling under buffered, spatially
   # unique points
   mask_vals <- raster::extract(mask,
-                       points[unique_idx, ],
-                       cellnumbers = TRUE,
-                       buffer = buffer)
+                               points[unique_idx, ],
+                               cellnumbers = TRUE,
+                               buffer = buffer)
 
   # get as a vector of unique cells falling under the mask
   mask_cells <- unique(unlist(lapply(mask_vals, '[', , 1)))
@@ -96,8 +96,8 @@ insertRaster <- function (raster, new_vals, idx = NULL) {
   # create results raster
   n <- ncol(new_vals)
   raster_new <- raster::brick(replicate(n,
-                              raster[[1]],
-                              simplify = FALSE))
+                                        raster[[1]],
+                                        simplify = FALSE))
   names(raster_new) <- colnames(new_vals)
 
   # update the values
@@ -124,6 +124,7 @@ insertRaster <- function (raster, new_vals, idx = NULL) {
 #' @param radius radius of the sphere in on which the Cartesian coodinates are
 #'  defined. By default the approximate radius of the earth in kilometres.
 #'
+#' @family GIS
 #' @export
 #'
 #' @return ll2cart: a three-column dataframe giving the x, y and z positions
@@ -156,6 +157,7 @@ ll2cart <- function (longlat, radius = 6371) {
 #' @param xyz a matrix or dataframe giving the cartesian coordinates
 #'  (in order x, y, z) of a set of locations
 #'
+#' @family GIS
 #' @export
 #'
 #' @return cart2ll: a two-column dataframe giving the longitudes and latitudes
@@ -178,5 +180,154 @@ cart2ll <- function (xyz, radius = 6371) {
                     latitude = asin(z / radius))
 
   return (ans)
+
+}
+
+#' @rdname getArea
+#' @name getArea
+#'
+#' @title Return the Area of an sp Object
+#'
+#' @description Determine the area of an sp polygon object,
+#'  summing across sub-polygons if necesssary
+#'
+#' @param sp an object of class \code{\link{sp}} represnting one or
+#'  more polygons
+#'
+#' @family GIS
+#' @export
+#'
+#' @return a scalar numeric giving the total area
+#'
+getArea <- function (sp) {
+  # get the area of an sp polygon object
+  areas <- sapply(slot(sp, "polygons"), slot, "area")
+  area <- sum(areas)
+  return (area)
+}
+
+
+#' @title safeMask
+#' @rdname safeMask
+#'
+#' @title Mask a RasterLayer by an sp Object Safely
+#'
+#' @description Mask a \code{\link{RasterLayer}} object using a
+#'  \code{\link{sp}} object representing one or more polygons in a
+#'  such that cells falling under small polygons are masked out.
+#'  Note this function is slower than \code{\link{raster::mask}}
+#'  and has different behaviour.
+#'
+#' @family GIS
+#' @export
+#' @import raster
+#'
+#' @param raster a \code{RasterLayer} object to mask.
+#' @param sp an \code{sp} object by which to mask \code{raster}.
+#'
+#' @return a \code{RasterLayer} object, the same as \code{raster} but with
+#'  any cell falling under \code{sp} set to \code{NA}
+safeMask <- function(raster, sp) {
+
+  # extract by small polygons
+  tmp <- raster::extract(raster, sp, cellnumbers = TRUE, small = TRUE)
+
+  # get all cell numbers under polygons
+  cells <- na.omit(unlist(lapply(tmp, function(x) x[, 1])))
+
+  # get those not under polygons
+  cells_chuck <- (1:ncell(raster))[-cells]
+
+  # set to NA
+  raster[cells_chuck] <- NA
+
+  # return the masked raster
+  return (raster)
+
+}
+
+
+#' @title getPoints
+#' @rdname getPoints
+#'
+#' @title Generate Spatial Integration Points for a Shapefile
+#' @description Use random sampling and K-means clustering to generate
+#'  a set of coordinates and corresponding weights that can be used
+#'  to carry out spatial integration over an area represented by an
+#'  \code{\link{sp}} object. The weights can be purely spatial, or can
+#'  determined by the values of a raster representing the process of
+#'  interest - for example population density. The raster should be
+#'  such that random points can be sampled from it according to cell
+#'  values using \code{\link{seegSDM::bgSample}}.
+#'
+#' @param shape an \code{sp} object containing one or more polygons
+#'  representing the region for which integration points are required
+#' @param raster a \code{RasterLayer} object, optionally containing values
+#'  determining weights for integration
+#' @param n the number of integration points required
+#' @param prob whether to weight the integration points by the values of
+#'  \code{raster}
+#'
+#' @import seegSDM
+#'
+#' @family GIS
+#' @export
+#'
+#' @return a three-column matrix giving the coordinates and corresponding
+#'  weights for the spatial integration points over \code{sp}.
+#'
+getPoints <- function (shape,
+                       raster,
+                       n = 10,
+                       prob = FALSE) {
+
+  # if prob is FALSE, a shit-ton of points are sampled
+  # uniformly at random within sp; if prob is TRUE they are biased
+  # by population within the polygon.
+  # The resulting points are then k-means clustered to yield
+  # n representative points
+
+  require('raster')
+
+  # check raster
+  stopifnot(inherits(raster, 'RasterLayer'))
+
+  # resize it
+  raster <- crop(raster, shape)
+  raster <- safeMask(raster, shape)
+
+  # get representative points in an sp object by uniform random
+  # sampling then kmeans clustering
+
+  # sample points
+  x <- seegSDM::bgSample(raster,
+                         10000,
+                         prob = prob,
+                         spatial = FALSE,
+                         replace = TRUE)
+
+  # coerce x to be a dataframe
+  x <- as.data.frame(x)
+
+  # k-means cluster the data
+  kmn <- kmeans(x, n)
+
+  # get the cluster centres
+  u <- kmn$centers
+
+  # get the weights (proportion of points falling in that area)
+  weights <- summary(factor(kmn$cluster)) / length(kmn$cluster)
+
+  # remove any rownames from the inducing points
+  rownames(u) <- NULL
+
+  # make sure they have their column names
+  colnames(u) <- colnames(x)
+
+  # add the weights on
+  u <- cbind(u, weights = weights)
+
+  # and return them
+  return (u)
 
 }

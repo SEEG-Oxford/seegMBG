@@ -1,7 +1,7 @@
 Package: seegMBG
 Type: Package
 Title: Streamlined Model-Based Geostatistics Functions for the SEEG Research Group
-Version: 0.01
+Version: 0.02
 Date: 2015-07-14
 Author: Nick Golding
 Maintainer: Nick Golding <nick.golding.research@gmail.com>

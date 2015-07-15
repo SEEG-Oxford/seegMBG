@@ -6,8 +6,8 @@
 \usage{
 periodTabulate(age_death, birth_int, cluster_id, windows_lower = c(0, 1, 3, 6,
   12, 24, 36, 48), windows_upper = c(0, 2, 5, 11, 23, 35, 47, 59),
-  period = 60, nperiod = 1, delay = max(windows_upper - windows_lower),
-  verbose = TRUE)
+  period = 60, method = c("monthly", "direct"), cohorts = c("one",
+  "three"), nperiod = 1, delay = NULL, verbose = TRUE)
 }
 \arguments{
 \item{age_death}{numeric vector giving the age of death in months of each
@@ -27,14 +27,29 @@ non-overlapping lower and upper ages in months of each survival window}
 \item{period}{the length of time in months for which mortality rates
 should be estimated, either vector or scalar}
 
+\item{method}{the method used to tabulate exposures and deaths, either by
+combining monthly exposures within the window (\code{method = 'monthly'})
+or directly counting the individuals exposed over the whole period
+(\code{method = 'direct'})}
+
+\item{cohorts}{the number of cohorts used to tabulate exposures and deaths
+for each age bins. If \code{cohorts = 'one'} then only individuals falling
+starting and ending the age bin inside the period are counted. If
+\code{cohorts = 'three'} then individuals starting but not ending,
+or ending but not starting, the age bin inside the period are also counted
+but the numbers divided by two.}
+
 \item{nperiod}{the number of consecutive periods to calculate for. I.e.
-if \code{period = 12} and \code{nperiod = 3}, numbers will be returned for
-periods 0-12, 13-24 and 25-36 months prior to the interview (plus delay).}
+ if \code{period = 12} and \code{nperiod = 3}, numbers will be returned for
+ periods 0-12, 13-24 and 25-36 months prior to the interview (plus delay).}
 
 \item{delay}{the length of time in months prior to the interview date
-to end the period, either vector or scalar.
-I.e. the period runs from \code{period + delay}
-months to \code{delay} months before the interview month.}
+to end the period (I.e. the period runs from \code{period + delay} months
+before the interview date to \code{period} days before).
+Either vector scalar, or \code{NULL}, in which case the default delay for
+\code{cohorts} is used: for \code{cohorts = 'one'} \code{delay = 0}; for
+\code{cohorts = 'three'}
+\code{delay = max(windows_upper - windows_lower)}.}
 
 \item{verbose}{whether to regularly report the stage of the analysis}
 }

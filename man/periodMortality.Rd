@@ -7,6 +7,7 @@
 periodMortality(age_death, birth_int, cluster_id, windows_lower = c(0, 1, 3,
   6, 12, 24, 36, 48), windows_upper = c(0, 2, 5, 11, 23, 35, 47, 59),
   ages_lower = c(0, 0), ages_upper = c(12, 60), period = 60,
+  method = c("monthly", "direct"), cohorts = c("one", "three"),
   delay = max(windows_upper - windows_lower), glm = FALSE, verbose = TRUE,
   ...)
 }
@@ -32,10 +33,25 @@ which to estimate mortality rates}
 \item{period}{the length of time in months for which mortality rates
 should be estimated, either vector or scalar}
 
+\item{method}{the method used to tabulate exposures and deaths, either by
+combining monthly exposures within the window (\code{method = 'monthly'})
+or directly counting the individuals exposed over the whole period
+(\code{method = 'direct'})}
+
+\item{cohorts}{the number of cohorts used to tabulate exposures and deaths
+for each age bins. If \code{cohorts = 'one'} then only individuals falling
+starting and ending the age bin inside the period are counted. If
+\code{cohorts = 'three'} then individuals starting but not ending,
+or ending but not starting, the age bin inside the period are also counted
+but the numbers divided by two.}
+
 \item{delay}{the length of time in months prior to the interview date
-to end the period, either vector or scalar.
-I.e. the period runs from \code{period + delay}
-months to \code{delay} months before the interview month.}
+to end the period (I.e. the period runs from \code{period + delay} months
+before the interview date to \code{period} days before).
+Either vector scalar, or \code{NULL}, in which case the default delay for
+\code{cohorts} is used: for \code{cohorts = 'one'} \code{delay = 0}; for
+\code{cohorts = 'three'}
+\code{delay = max(windows_upper - windows_lower)}.}
 
 \item{glm}{whether to infer the window-specific survival probabilities
 using a binomial random effects model across cluster, window and cohort.

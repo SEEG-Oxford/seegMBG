@@ -7,31 +7,15 @@
 #' @description Compute child mortality estimates using the DHS three-cohort
 #'  life table approach.
 #'
-#' @param age_death numeric vector giving the age of death in months of each
-#'  child. Note that if the child is still alive at the time of interview,
-#'  corresponding eleents of \code{age_death} should be given a number greater
-#'  than \code{max(windows_upper)}
-#' @param birth_int numeric vector giving the time in month between the
-#'  child's birth and the interview
-#' @param cluster_id vector giving the cluster identifier (can be numeric,
-#'  cahracter or factor)
-#' @param windows_lower,windows_upper numeric vectors giving the
-#'  non-overlapping lower and upper ages in months of each survival window
+#' @template period_args
 #' @param ages_lower,ages_upper numeric vectors giving the
 #'  non-overlapping lower and upper ages in months of the age windows for
 #'  which to estimate mortality rates
-#' @param period the length of time in months for which mortality rates
-#'  should be estimated, either vector or scalar
-#' @param delay the length of time in months prior to the interview date
-#'  to end the period, either vector or scalar.
-#'  I.e. the period runs from \code{period + delay}
-#'  months to \code{delay} months before the interview month.
 #' @param glm whether to infer the window-specific survival probabilities
 #'  using a binomial random effects model across cluster, window and cohort.
 #'  If \code{FALSE} probabilities are calculated as the raw ratio of the
 #'  number that survived to the number exposed and may therefore contain
 #'  zeros and indeterminate values.
-#' @param verbose whether to regularly report the stage of the analysis
 #' @param \dots other arguments to pass to \code{INLA::inla}
 #'
 #' @export
@@ -50,6 +34,8 @@ periodMortality <- function (age_death,
                              ages_lower = c(0, 0),
                              ages_upper = c(12, 60),
                              period = 60,
+                             method = c('monthly', 'direct'),
+                             cohorts = c('one', 'three'),
                              delay = max(windows_upper - windows_lower),
                              glm = FALSE,
                              verbose = TRUE,
@@ -87,6 +73,8 @@ periodMortality <- function (age_death,
                        windows_lower = windows_lower,
                        windows_upper = windows_upper,
                        period = period,
+                       method = method,
+                       cohorts = cohorts,
                        nperiod = 1,
                        delay = delay,
                        verbose = verbose)
@@ -173,26 +161,10 @@ periodMortality <- function (age_death,
 #' @description Count the number exposed and number dying
 #'  in a given set of age ranges and time periods
 #'
-#' @param age_death numeric vector giving the age of death in months of each
-#'  child. Note that if the child is still alive at the time of interview,
-#'  corresponding eleents of \code{age_death} should be given a number greater
-#'  than \code{max(windows_upper)}
-#' @param birth_int numeric vector giving the time in month between the
-#'  child's birth and the interview
-#' @param cluster_id vector giving the cluster identifier (can be numeric,
-#'  cahracter or factor)
-#' @param windows_lower,windows_upper numeric vectors giving the
-#'  non-overlapping lower and upper ages in months of each survival window
-#' @param period the length of time in months for which mortality rates
-#'  should be estimated, either vector or scalar
+#' @template period_args
 #' @param nperiod the number of consecutive periods to calculate for. I.e.
 #'  if \code{period = 12} and \code{nperiod = 3}, numbers will be returned for
 #'  periods 0-12, 13-24 and 25-36 months prior to the interview (plus delay).
-#' @param delay the length of time in months prior to the interview date
-#'  to end the period, either vector or scalar.
-#'  I.e. the period runs from \code{period + delay}
-#'  months to \code{delay} months before the interview month.
-#' @param verbose whether to regularly report the stage of the analysis
 #'
 #' @export
 #'
@@ -214,9 +186,27 @@ periodTabulate <- function (age_death,
                             windows_lower = c(0, 1, 3, 6, 12, 24, 36, 48),
                             windows_upper = c(0, 2, 5, 11, 23, 35, 47, 59),
                             period = 60,
+                            method = c('monthly', 'direct'),
+                            cohorts = c('one', 'three'),
                             nperiod = 1,
-                            delay = max(windows_upper - windows_lower),
+                            delay = NULL,
                             verbose = TRUE) {
+
+  # get the tabulation method
+  method <- match.arg(method)
+  cohorts <- match.arg(cohorts)
+
+  # if no delay is specified, get the correct one for the method
+  if (is.null(delay)) {
+    delay <- switch(cohorts,
+                    one = 0,
+                    three = max(windows_upper - windows_lower))
+  }
+
+  # match up the cohorts
+  cohort_names <- switch(cohorts,
+                    one = 'B',
+                    three = c('A', 'B', 'C'))
 
   # get unique clusters
   clusters <- unique(cluster_id)
@@ -242,17 +232,6 @@ periodTabulate <- function (age_death,
     stop ('windows_upper and windows_lower appear to overlap')
   }
 
-  # window age limit matrices
-  upper_mat <- t(expand(windows_upper, n))
-  lower_mat <- t(expand(windows_lower, n))
-
-  # data matrices
-  age_death <- expand(age_death, nw)
-  birth_int <- expand(birth_int, nw)
-
-  # delay and period matrices
-  delay_mat <- expand(delay, nw)
-  period_mat <- expand(period, nw)
 
   # set up dataframe to store the results
   ans <- data.frame(cluster_id = rep(clusters, each = nw * np),
@@ -266,65 +245,145 @@ periodTabulate <- function (age_death,
     # notify the user
     if (verbose & np > 1) message(paste('\nprocessing period', p))
 
+    if (method == 'monthly') {
 
-    # get the extra delay matrix
-    extra_delay_mat <- period_mat * (p - 1)
+      # loop through the age windows
+      for (w in 1:nw) {
 
-    # empty objects to store total deaths and exposures for each window
-    deaths <- exposed <- 0
+        # component monthly age windows
+        new_windows <- seq(windows_lower[w],
+                           windows_upper[w],
+                           by = 1)
 
-    # loop through cohorts
-    for (cohort in c('A', 'B', 'C')) {
+        # account for the 0th month not being made into a sequence
+        if (length(new_windows) == 1 && new_windows == 0) {
+          new_windows <- c(0, 0)
+        }
 
-      # notify the user
-      if (verbose) message(paste('processing cohort', cohort))
+        # number of new windows
+        n_nw <- length(new_windows) - 1
 
-      # cohort end date matrix
-      start_mat <- switch(cohort,
-                          B = upper_mat,
-                          A = period_mat + lower_mat,
-                          C = lower_mat )
+        # recursively call this function with method = direct, calculating
+        # numbers for monthly bins
+        res_tmp <- periodTabulate(age_death = age_death,
+                       birth_int = birth_int,
+                       cluster_id = cluster_id,
+                       windows_lower = new_windows[-n_nw],
+                       windows_upper = new_windows[-1],
+                       period = period,
+                       method = "direct",
+                       cohorts = cohorts,
+                       nperiod = 1,
+                       delay = delay + period * (p - 1),
+                       verbose = verbose)
 
-      # cohort start date matrix
-      end_mat <- switch(cohort,
-                        B = period_mat + lower_mat,
-                        A = period_mat + upper_mat,
-                        C = upper_mat)
+        # this returns cluster-level deaths & exposures for each age bin
+        # next, combine them to get expected numbers of period exposures
+        # and deaths
 
-      # add the delays - gap between end of period and interview date
-      # and extra delays for different periods
-      start_mat <- start_mat + delay_mat + extra_delay_mat
-      end_mat <- end_mat + delay_mat + extra_delay_mat
+        # aggregate monthly deaths and exposures
+        exposed_mnth <- tapply(res_tmp$exposed, res_tmp$cluster_id, sum)
+        died_mnth <- tapply(res_tmp$died, res_tmp$cluster_id, sum)
 
-      # add effective number exposed
-      exposed_cohort <- (birth_int <= end_mat &  # entered cohort before cohort end date
-                           birth_int >= start_mat &  # entered cohort after cohort start date
-                           age_death >= lower_mat) # alive at start of cohort
+        # get expected period exposures
+        exposed_per <- exposed_mnth / n_nw
 
-      # and effective number that died
-      deaths_cohort <- (exposed_cohort > 0 &  # actually exposed this time
-                          age_death <= upper_mat)  # died before end of window
+        # get expected period deaths
+        rate <- 1 - (1 - (died_mnth / (exposed_mnth))) ^ n_nw
 
-      # get the cohort weight
-      weight <- ifelse(cohort == 'B', 1, 0.5)
+        died_per <- rate * exposed_per
 
-      # otherwise accumulate these raw numbers with weights
-      exposed <- exposed + exposed_cohort * weight
-      deaths <- deaths + deaths_cohort * weight
+        # set any 0 total monthly exposures to 0 in the periods
+        exposed_per[exposed_mnth == 0] <- 0
+        died_per[exposed_mnth == 0] <- 0
 
-    } # cohort loop
+        # insert these into the results dataframe
+        idx_insert <- which(ans$period == p & ans$age_bin == w)
 
-    # check they're all sane
-    stopifnot(all(exposed <= 2))
-    stopifnot(all(deaths <= 2))
+        ans$exposed[idx_insert] <- exposed_per
+        ans$died[idx_insert] <- died_per
 
-    # aggregate by cluster
-    exposed_agg <- aggMatrix(exposed, cluster_id)
-    deaths_agg <- aggMatrix(deaths, cluster_id)
+      }
 
-    # add to results
-    ans$exposed[ans$period == p] <- as.vector(t(exposed_agg))
-    ans$died[ans$period == p] <- as.vector(t(deaths_agg))
+    } else if (method == 'direct') {
+
+      # get matrices
+
+      # window age limit matrices
+      upper_mat <- t(expand(windows_upper, n))
+      lower_mat <- t(expand(windows_lower, n))
+
+      # data matrices
+      age_death <- expand(age_death, nw)
+      birth_int <- expand(birth_int, nw)
+
+      # delay and period matrices
+      delay_mat <- expand(delay, nw)
+      period_mat <- expand(period, nw)
+
+      # get the extra delay matrix
+      extra_delay_mat <- period_mat * (p - 1)
+
+      # empty objects to store total deaths and exposures for each window
+      deaths <- exposed <- 0
+
+      # loop through cohorts
+      for (cohort in cohort_names) {
+
+        # notify the user
+        if (verbose & length(cohort_names) > 1) {
+          message(paste('processing cohort', cohort))
+        }
+
+        # cohort end date matrix
+        start_mat <- switch(cohort,
+                            B = upper_mat,
+                            A = period_mat + lower_mat,
+                            C = lower_mat )
+
+        # cohort start date matrix
+        end_mat <- switch(cohort,
+                          B = period_mat + lower_mat,
+                          A = period_mat + upper_mat,
+                          C = upper_mat)
+
+        # add the delays - gap between end of period and interview date
+        # and extra delays for different periods
+        start_mat <- start_mat + delay_mat + extra_delay_mat
+        end_mat <- end_mat + delay_mat + extra_delay_mat
+
+        # add effective number exposed
+        exposed_cohort <- (birth_int <= end_mat &  # entered cohort before cohort end date
+                             birth_int >= start_mat &  # entered cohort after cohort start date
+                             age_death >= lower_mat) # alive at start of cohort
+
+        # and effective number that died
+        deaths_cohort <- (exposed_cohort > 0 &  # actually exposed this time
+                            age_death <= upper_mat)  # died before end of window
+
+        # get the cohort weight
+        weight <- ifelse(cohort == 'B', 1, 0.5)
+
+        # otherwise accumulate these raw numbers with weights
+        exposed <- exposed + exposed_cohort * weight
+        deaths <- deaths + deaths_cohort * weight
+
+      } # cohort loop
+
+      # check they're all sane
+      stopifnot(all(exposed <= 2))
+      stopifnot(all(deaths <= 2))
+
+      # aggregate by cluster
+      exposed_agg <- aggMatrix(exposed, cluster_id)
+      deaths_agg <- aggMatrix(deaths, cluster_id)
+
+      # add to results
+      ans$exposed[ans$period == p] <- as.vector(t(exposed_agg))
+      ans$died[ans$period == p] <- as.vector(t(deaths_agg))
+
+    }
+
 
   }
 

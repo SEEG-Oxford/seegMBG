@@ -26,11 +26,11 @@ a three-column matrix giving the coordinates and corresponding
 Use random sampling and K-means clustering to generate
  a set of coordinates and corresponding weights that can be used
  to carry out spatial integration over an area represented by an
- \code{\link{sp}} object. The weights can be purely spatial, or can
+ \code{sp} object. The weights can be purely spatial, or can
  determined by the values of a raster representing the process of
  interest - for example population density. The raster should be
  such that random points can be sampled from it according to cell
- values using \code{\link{seegSDM::bgSample}}.
+ values using \code{seegSDM::bgSample}.
 }
 \seealso{
 Other GIS: \code{\link{bufferMask}}; \code{\link{cart2ll}},

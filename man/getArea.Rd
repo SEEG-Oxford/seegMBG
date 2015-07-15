@@ -7,7 +7,7 @@
 getArea(sp)
 }
 \arguments{
-\item{sp}{an object of class \code{\link{sp}} represnting one or
+\item{sp}{an object of class \code{sp} represnting one or
  more polygons}
 }
 \value{

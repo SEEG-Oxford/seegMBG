@@ -18,7 +18,7 @@ merge.formula(x, y, ...)
 }
 \value{
 a \code{formula} with the response form \code{x} and the predictors
- from both \code{x} and code{y}
+ from both \code{x} and \code{y}
 }
 \description{
 Merge two formulae to combine predictors (right hand side).

@@ -16,10 +16,10 @@ a \code{RasterLayer} object, the same as \code{raster} but with
  any cell falling under \code{sp} set to \code{NA}
 }
 \description{
-Mask a \code{\link{RasterLayer}} object using a
- \code{\link{sp}} object representing one or more polygons in a
+Mask a \code{RasterLayer} object using a
+ \code{sp} object representing one or more polygons in a
  such that cells falling under small polygons are masked out.
- Note this function is slower than \code{\link{raster::mask}}
+ Note this function is slower than \code{raster::mask}
  and has different behaviour.
 }
 \seealso{

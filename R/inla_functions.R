@@ -519,7 +519,7 @@ predictFixed <- function (params, data, draw = 1, subset = NULL) {
 predictSpatial <- function (params, coords, mesh, draw = 1, time = NULL, n_time = NULL) {
 
   # check that n_time is present if time is not null
-  if (!is.null(time) && is.nul(n_time))
+  if (!is.null(time) && is.null(n_time))
 
   # check the draw number is valid
   stopifnot(draw %in% seq_len(length(params$params)))
@@ -550,7 +550,7 @@ predictSpatial <- function (params, coords, mesh, draw = 1, time = NULL, n_time 
     A <- INLA::inla.spde.make.A(mesh = mesh,
                                loc = coords,
                                group = rep(time, nrow(coords)),
-                               n.group = ny_time)
+                               n.group = n_time)
 
     # linearly project the spatial random field
     ans <- as.vector(A %*% spatial_par)

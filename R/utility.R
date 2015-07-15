@@ -101,7 +101,7 @@ getRHS <- function(f, split = TRUE) {
 #' @param \dots further arguments passed to or from other methods.
 #'
 #' @return a \code{formula} with the response form \code{x} and the predictors
-#'  from both \code{x} and code{y}
+#'  from both \code{x} and \code{y}
 #'
 #' @family utility
 #'

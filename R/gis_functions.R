@@ -167,7 +167,7 @@ cart2ll <- function (xyz, radius = 6371) {
 
   # check inputs
   stopifnot(is.finite(radius) & radius > 0)
-  stopifnot(inherits(longlat, 'matrix') | inherits(longlat, 'data.frame'))
+  stopifnot(inherits(xyz, 'matrix') | inherits(xyz, 'data.frame'))
   stopifnot(ncol(xyz) == 3)
 
   # extract columns
@@ -191,7 +191,7 @@ cart2ll <- function (xyz, radius = 6371) {
 #' @description Determine the area of an sp polygon object,
 #'  summing across sub-polygons if necesssary
 #'
-#' @param sp an object of class \code{\link{sp}} represnting one or
+#' @param sp an object of class \code{sp} represnting one or
 #'  more polygons
 #'
 #' @family GIS
@@ -212,10 +212,10 @@ getArea <- function (sp) {
 #'
 #' @title Mask a RasterLayer by an sp Object Safely
 #'
-#' @description Mask a \code{\link{RasterLayer}} object using a
-#'  \code{\link{sp}} object representing one or more polygons in a
+#' @description Mask a \code{RasterLayer} object using a
+#'  \code{sp} object representing one or more polygons in a
 #'  such that cells falling under small polygons are masked out.
-#'  Note this function is slower than \code{\link{raster::mask}}
+#'  Note this function is slower than \code{raster::mask}
 #'  and has different behaviour.
 #'
 #' @family GIS
@@ -254,11 +254,11 @@ safeMask <- function(raster, sp) {
 #' @description Use random sampling and K-means clustering to generate
 #'  a set of coordinates and corresponding weights that can be used
 #'  to carry out spatial integration over an area represented by an
-#'  \code{\link{sp}} object. The weights can be purely spatial, or can
+#'  \code{sp} object. The weights can be purely spatial, or can
 #'  determined by the values of a raster representing the process of
 #'  interest - for example population density. The raster should be
 #'  such that random points can be sampled from it according to cell
-#'  values using \code{\link{seegSDM::bgSample}}.
+#'  values using \code{seegSDM::bgSample}.
 #'
 #' @param shape an \code{sp} object containing one or more polygons
 #'  representing the region for which integration points are required
@@ -287,13 +287,11 @@ getPoints <- function (shape,
   # The resulting points are then k-means clustered to yield
   # n representative points
 
-  require('raster')
-
   # check raster
   stopifnot(inherits(raster, 'RasterLayer'))
 
   # resize it
-  raster <- crop(raster, shape)
+  raster <- raster::crop(raster, shape)
   raster <- safeMask(raster, shape)
 
   # get representative points in an sp object by uniform random

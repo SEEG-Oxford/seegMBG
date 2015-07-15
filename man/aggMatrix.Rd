@@ -4,7 +4,7 @@
 \alias{aggMatrix}
 \title{Aggregate Values Accross Rows of a Matrix}
 \usage{
-aggMatrix(x, index, fun = sum, margin = 1)
+aggMatrix(x, index, fun = sum, margin = 1, ...)
 }
 \arguments{
 \item{x}{a matrix containing numeric, complex, integer or logical values,
@@ -19,7 +19,9 @@ like \code{+}, \code{\%*\%}, etc., the function name must be backquoted
 or quoted.}
 
 \item{margin}{over which margin should the operation take place
- (i.e. which margin matches \code{index}).}
+(i.e. which margin matches \code{index}).}
+
+\item{\dots}{other arguments to be passed to \code{fun}.}
 }
 \value{
 a matrix with dimensions \code{dim(x)[1], length(index)}

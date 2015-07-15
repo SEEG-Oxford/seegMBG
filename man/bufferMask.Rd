@@ -26,6 +26,8 @@ Create a mask \code{RasterLayer} with NA values in all cells more
  than a specified distance from a set of points.
 }
 \seealso{
-Other GIS: \code{\link{insertRaster}}
+Other GIS: \code{\link{cart2ll}}, \code{\link{ll2cart}};
+  \code{\link{getArea}}; \code{\link{getPoints}};
+  \code{\link{insertRaster}}; \code{\link{safeMask}}
 }
 

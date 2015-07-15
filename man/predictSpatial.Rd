@@ -4,7 +4,7 @@
 \alias{predictSpatial}
 \title{Predict the Spatial Random Effect Part of an INLA MBG Model}
 \usage{
-predictSpatial(params, coords, mesh, draw = 1)
+predictSpatial(params, coords, mesh, draw = 1, time = NULL, n_time = NULL)
 }
 \arguments{
 \item{params}{an object of class \code{params} produced by
@@ -17,6 +17,12 @@ spatial random effect at.}
 random effect.}
 
 \item{draw}{which parameter set to use}
+
+\item{time}{if a space-time model, the index to the discrete time variable
+for which spatial predictions are to be made in this round.}
+
+\item{n_time}{if a space-time model, the length of the discrete time
+ variable used in the model.}
 }
 \value{
 a vector of the same length as the number of rows in \code{coords},

@@ -31,4 +31,13 @@ Convert coordinates given as latitude and longitude to
  three-dimensional coordinates on a sphere. This can be used to account
  for great-circle distances when fitting spatial models.
 }
+\seealso{
+Other GIS: \code{\link{bufferMask}}; \code{\link{getArea}};
+  \code{\link{getPoints}}; \code{\link{insertRaster}};
+  \code{\link{safeMask}}
+
+Other GIS: \code{\link{bufferMask}}; \code{\link{getArea}};
+  \code{\link{getPoints}}; \code{\link{insertRaster}};
+  \code{\link{safeMask}}
+}
 

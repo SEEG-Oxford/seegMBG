@@ -5,10 +5,28 @@
 #'
 #' @title Prediction from INLA MBG models
 #'
-#' @description Given a fitted \code{\link{inla}} object for a spatial or
-#'  spatio-temporal geostatistical model, make predictions to a new dataset
+#' @description Given a fitted \code{\link{inla}} object for a spatial
+#'  geostatistical model, make predictions to a new dataset
 #'  or \code{RasterBrick} either from the maximum \emph{a posterior} parameter
 #'  set, or as samples from the predictive posterior.
+#'
+#'  Note that this function is only designed to work with a specific type of
+#'  geostatistical model, fitted in a specific way and is likely to produce
+#'  unexpected (i.e. wrong) results when used with other types of model.
+#'
+#'  Examples of things that aren't allowed are:
+#'    \itemize{
+#'      \item prediction using factor (discrete) variables.
+#'       Though it should be possible to manually expand the factors into the
+#'       correctly named dummy variables (see \code{inla$names.fixed} for the
+#'       expected names) and predict to these. This includes the use of iid
+#'       random effects, unfortunately.
+#'      \item prediction using models constructed with anything other than an
+#'       spde2 spatial model.
+#'      \item spatial models fitted using 3D Cartesian coordinates (to be
+#'       added soon).
+#'      \item space-time models (to be added soon).
+#'    }
 #'
 #' @param inla a fitted \code{\link{inla}} object with fixed effects terms
 #'  and a spatial or spatio-temporal random effect model. If
@@ -69,11 +87,26 @@ predictINLA <- function(inla,
   stopifnot(inherits(inla, 'inla'))
   stopifnot(inla$model.random == 'SPDE2 model')
   stopifnot(inherits(data, 'data.frame'))
+  stopifnot(all(sapply(data, class) != 'factor'))
   stopifnot(inherits(mesh, 'inla.mesh'))
 
   # check incoming data shapes
   stopifnot(length(coords) == 2 & all(coords %in% names(data)))
   stopifnot(all(inla$names.fixed %in% names(data)))
+
+  # throw an error if there's a default model intercept
+  # - supposedly messes with the spde stuff
+  if ('(Intercept)' %in% inla$names.fixed) {
+    stop('This model appears to contain an INLA intercept term. \
+         These should not be used with spde models apparently.')
+  }
+
+  # only use one cpu if MAP
+  if (method == 'MAP' & ncpu > 1) {
+    warning('parallel prediction is not currently possible for MAP \
+            estimation. Running sequentially instead.')
+    ncpu <- 1
+  }
 
   # ~~~~~~~~~~~~~~~~~~
   # get required data
@@ -473,13 +506,20 @@ predictFixed <- function (params, data, draw = 1, subset = NULL) {
 #' @param mesh the \code{\link{inla.mesh}} object used to construct the spatial
 #'  random effect.
 #' @param draw which parameter set to use
+#' @param time if a space-time model, the index to the discrete time variable
+#'  for which spatial predictions are to be made in this round.
+#' @param n_time if a space-time model, the length of the discrete time
+#'  variable used in the model.
 #'
 #' @import INLA
 #'
 #' @return a vector of the same length as the number of rows in \code{coords},
 #'  giving the corresponding values of the spatial linear predictor
 #'
-predictSpatial <- function (params, coords, mesh, draw = 1) {
+predictSpatial <- function (params, coords, mesh, draw = 1, time = NULL, n_time = NULL) {
+
+  # check that n_time is present if time is not null
+  if (!is.null(time) && is.null(n_time))
 
   # check the draw number is valid
   stopifnot(draw %in% seq_len(length(params$params)))
@@ -493,16 +533,36 @@ predictSpatial <- function (params, coords, mesh, draw = 1) {
   # convert coords to matrix
   coords <- as.matrix(coords)
 
-  # define projector to new locations
-  proj <- INLA::inla.mesh.projector(mesh, coords)
+  # do the projection
+  if (is.null(time)) {
+    # if it's not temporally explicit
 
-  # project the spatial random field
-  ans <- INLA::inla.mesh.project(proj, spatial_par)
+    # define projector to new locations
+    proj <- INLA::inla.mesh.projector(mesh, coords)
+
+    # project the spatial random field
+    ans <- INLA::inla.mesh.project(proj, spatial_par)
+
+  } else {
+    # if it's for a particular year
+
+    # build the A matrix directly for the year in question
+    A <- INLA::inla.spde.make.A(mesh = mesh,
+                               loc = coords,
+                               group = rep(time, nrow(coords)),
+                               n.group = n_time)
+
+    # linearly project the spatial random field
+    ans <- as.vector(A %*% spatial_par)
+
+  }
 
   # return it
   return (ans)
 
 }
+
+
 
 #' @name predictAll
 #' @rdname predictAll

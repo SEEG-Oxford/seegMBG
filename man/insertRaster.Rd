@@ -28,6 +28,8 @@ Given a template raster, new set of values for non-missing
  as many layers as the new dataframe has columns.
 }
 \seealso{
-Other GIS: \code{\link{bufferMask}}
+Other GIS: \code{\link{bufferMask}}; \code{\link{cart2ll}},
+  \code{\link{ll2cart}}; \code{\link{getArea}};
+  \code{\link{getPoints}}; \code{\link{safeMask}}
 }
 

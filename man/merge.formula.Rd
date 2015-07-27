@@ -5,7 +5,7 @@
 \alias{merge.formula}
 \title{Merge Two Formulae}
 \usage{
-merge.formula(x, y, ...)
+\method{merge}{formula}(x, y, ...)
 
 \method{+}{formula}(x, y)
 }

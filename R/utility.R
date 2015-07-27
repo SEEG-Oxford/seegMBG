@@ -106,7 +106,7 @@ getRHS <- function(f, split = TRUE) {
 #' @family utility
 #'
 #' @export
-#'
+#' @method merge formula
 #' @examples
 #' f <- y ~ x
 #' g <- ~ a * b + c

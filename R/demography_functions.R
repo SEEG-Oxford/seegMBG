@@ -36,6 +36,7 @@ periodMortality <- function (age_death,
                              period = 60,
                              method = c('monthly', 'direct'),
                              cohorts = c('one', 'three'),
+                             inclusion = c('enter', 'exit', 'both', 'either'),
                              delay = max(windows_upper - windows_lower),
                              glm = FALSE,
                              verbose = TRUE,
@@ -86,6 +87,9 @@ periodMortality <- function (age_death,
     # round up the deaths and exposures
     df$exposed <- ceiling(df$exposed)
     df$died <- ceiling(df$died)
+
+    # make sure there aren't more deaths than exposures, from rounding errors
+    df$exposed <- pmax(df$exposed, df$died)
 
     # define the formula
     f <- died ~ 1 + f(age_bin, model = 'iid') + f(cluster_id, model = 'iid')
@@ -188,6 +192,7 @@ periodTabulate <- function (age_death,
                             period = 60,
                             method = c('monthly', 'direct'),
                             cohorts = c('one', 'three'),
+                            inclusion = c('enter', 'exit', 'both', 'either'),
                             nperiod = 1,
                             delay = NULL,
                             verbose = TRUE) {
@@ -195,6 +200,7 @@ periodTabulate <- function (age_death,
   # get the tabulation method
   method <- match.arg(method)
   cohorts <- match.arg(cohorts)
+  inclusion <- match.arg(inclusion)
 
   # if no delay is specified, get the correct one for the method
   if (is.null(delay)) {
@@ -231,7 +237,6 @@ periodTabulate <- function (age_death,
   if (any(windows_upper[-1] <= windows_lower[-nw])) {
     stop ('windows_upper and windows_lower appear to overlap')
   }
-
 
   # set up dataframe to store the results
   ans <- data.frame(cluster_id = rep(clusters, each = nw * np),
@@ -273,6 +278,7 @@ periodTabulate <- function (age_death,
                        period = period,
                        method = "direct",
                        cohorts = cohorts,
+                       inclusion = c('enter', 'exit', 'both', 'either'),
                        nperiod = 1,
                        delay = delay + period * (p - 1),
                        verbose = verbose)
@@ -313,6 +319,9 @@ periodTabulate <- function (age_death,
       upper_mat <- t(expand(windows_upper, n))
       lower_mat <- t(expand(windows_lower, n))
 
+      # age bin range matrix
+      age_range_mat <- upper_mat - lower_mat
+
       # data matrices
       age_death <- expand(age_death, nw)
       birth_int <- expand(birth_int, nw)
@@ -321,7 +330,7 @@ periodTabulate <- function (age_death,
       delay_mat <- expand(delay, nw)
       period_mat <- expand(period, nw)
 
-      # get the extra delay matrix
+      # get the extra delay matrix, for when multiple periods are needed
       extra_delay_mat <- period_mat * (p - 1)
 
       # empty objects to store total deaths and exposures for each window
@@ -334,6 +343,25 @@ periodTabulate <- function (age_death,
         if (verbose & length(cohort_names) > 1) {
           message(paste('processing cohort', cohort))
         }
+
+        # define inclusion offsets
+        # i.e. if they only need to enter the age bin in the period,
+        # can reduce the upper limit of birth-to-interview time
+
+
+        # offset for upper limit
+        start_offset <- switch(inclusion,
+                               enter = -age_range_mat,
+                               exit = 0,
+                               both = 0,
+                               either = -age_range_mat)
+
+        # offset for lower limit
+        end_offset <- switch(inclusion,
+                             enter = 0,
+                             exit = age_range_mat,
+                             both = 0,
+                             either = age_range_mat)
 
         # cohort end date matrix
         start_mat <- switch(cohort,
@@ -352,6 +380,10 @@ periodTabulate <- function (age_death,
         start_mat <- start_mat + delay_mat + extra_delay_mat
         end_mat <- end_mat + delay_mat + extra_delay_mat
 
+        # add in the inclusion offsets
+        start_mat <- start_mat + start_offset
+        end_mat <- end_mat + end_offset
+
         # add effective number exposed
         exposed_cohort <- (birth_int <= end_mat &  # entered cohort before cohort end date
                              birth_int >= start_mat &  # entered cohort after cohort start date
@@ -364,7 +396,7 @@ periodTabulate <- function (age_death,
         # get the cohort weight
         weight <- ifelse(cohort == 'B', 1, 0.5)
 
-        # otherwise accumulate these raw numbers with weights
+        # accumulate these raw numbers with weights
         exposed <- exposed + exposed_cohort * weight
         deaths <- deaths + deaths_cohort * weight
 

@@ -7,7 +7,8 @@
 periodTabulate(age_death, birth_int, cluster_id, windows_lower = c(0, 1, 3, 6,
   12, 24, 36, 48), windows_upper = c(0, 2, 5, 11, 23, 35, 47, 59),
   period = 60, method = c("monthly", "direct"), cohorts = c("one",
-  "three"), nperiod = 1, delay = NULL, verbose = TRUE)
+  "three"), inclusion = c("enter", "exit", "both", "either"), nperiod = 1,
+  delay = NULL, verbose = TRUE)
 }
 \arguments{
 \item{age_death}{numeric vector giving the age of death in months of each
@@ -39,6 +40,16 @@ starting and ending the age bin inside the period are counted. If
 or ending but not starting, the age bin inside the period are also counted
 but the numbers divided by two.}
 
+\item{inclusion}{which individuals to include in each cohort:
+\code{'enter'}, those \emph{entering} the target ages during the cohort
+ time period;
+\code{'exit'}, those \emph{exiting} the target ages during the cohort time
+ period;
+\code{'both'}, those \emph{both} entering and exiting the target ages
+ during the cohort time period;
+\code{'either'}, those \emph{either} entering or exiting the target ages
+ during the cohort time period;}
+
 \item{nperiod}{the number of consecutive periods to calculate for. I.e.
  if \code{period = 12} and \code{nperiod = 3}, numbers will be returned for
  periods 0-12, 13-24 and 25-36 months prior to the interview (plus delay).}
@@ -69,5 +80,17 @@ a dataframe with number of rows equal to all combinations of
 \description{
 Count the number exposed and number dying
  in a given set of age ranges and time periods
+}
+\note{
+This function enables reconstruction of the DHS three-cohort method,
+ as well as the IHME method, for estimating period mortality rates via
+ specification of the \code{method},\code{cohorts} and \code{inclusion}
+ arguments. For the IHME method, the user should specify:
+ \code{method = 'monthly', cohorts = 'one', inclusion = 'enter'}
+ and for the DHS method:
+ \code{method = 'direct', cohorts = 'three', inclusion = 'both'}.
+ Note that mixing and matching these argument in other ways will likely not
+ lead to sane mortality rate estiamtes, since indivivduals could be recorded
+ multiple times.
 }
 

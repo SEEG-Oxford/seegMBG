@@ -21,6 +21,15 @@
 #'  \code{cohorts = 'three'} then individuals starting but not ending,
 #'  or ending but not starting, the age bin inside the period are also counted
 #'  but the numbers divided by two.
+#' @param inclusion which individuals to include in each cohort:
+#'  \code{'enter'}, those \emph{entering} the target ages during the cohort
+#'   time period;
+#'  \code{'exit'}, those \emph{exiting} the target ages during the cohort time
+#'   period;
+#'  \code{'both'}, those \emph{both} entering and exiting the target ages
+#'   during the cohort time period;
+#'  \code{'either'}, those \emph{either} entering or exiting the target ages
+#'   during the cohort time period;
 #' @param delay the length of time in months prior to the interview date
 #'  to end the period (I.e. the period runs from \code{period + delay} months
 #'  before the interview date to \code{period} days before).
@@ -29,3 +38,14 @@
 #'  \code{cohorts = 'three'}
 #'  \code{delay = max(windows_upper - windows_lower)}.
 #' @param verbose whether to regularly report the stage of the analysis
+#'
+#' @note This function enables reconstruction of the DHS three-cohort method,
+#'  as well as the IHME method, for estimating period mortality rates via
+#'  specification of the \code{method},\code{cohorts} and \code{inclusion}
+#'  arguments. For the IHME method, the user should specify:
+#'  \code{method = 'monthly', cohorts = 'one', inclusion = 'enter'}
+#'  and for the DHS method:
+#'  \code{method = 'direct', cohorts = 'three', inclusion = 'both'}.
+#'  Note that mixing and matching these argument in other ways will likely not
+#'  lead to sane mortality rate estiamtes, since indivivduals could be recorded
+#'  multiple times.

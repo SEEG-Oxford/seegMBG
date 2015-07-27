@@ -37,6 +37,7 @@ periodMortality <- function (age_death,
                              method = c('monthly', 'direct'),
                              cohorts = c('one', 'three'),
                              inclusion = c('enter', 'exit', 'both', 'either'),
+                             mortality = c('bin', 'monthly'),
                              delay = max(windows_upper - windows_lower),
                              glm = FALSE,
                              verbose = TRUE,
@@ -76,12 +77,13 @@ periodMortality <- function (age_death,
                        period = period,
                        method = method,
                        cohorts = cohorts,
+                       inclusion = inclusion,
+                       mortality = mortality,
                        nperiod = 1,
                        delay = delay,
                        verbose = verbose)
 
   # fit the required model
-
   if (glm) {
 
     # round up the deaths and exposures
@@ -131,13 +133,33 @@ periodMortality <- function (age_death,
   # get results
   ans <- list()
 
-  # loop through required ages
+  # loop through age bins for which mortality estimates are needed
   for (i in 1:na) {
 
     index <- windows_lower < ages_upper[i] &
       windows_upper > ages_lower[i]
 
-    mortality <- 1 - rowProds(survival_mat[, index, drop = FALSE])
+    # get bin mortality estimates
+    if (mortality == 'bin') {
+
+      # if the whole bin is wanted, it's the product of all probabilities
+      mortality <- 1 - rowProds(survival_mat[, index, drop = FALSE])
+
+    } else if (mortality == 'monthly') {
+
+      # if the monthly mortality estimate is needed, it's the
+      # mean rate weighted by the number of months
+
+      # get number of months in each bin in the required age bin
+      months <- 1 + windows_upper[index] - windows_lower[index]
+
+      # get weighted mean rate
+      mortality <- apply(survival_mat[, index, drop = FALSE],
+                         1,
+                         weighted.mean,
+                         w = months)
+
+    }
 
     ans[[i]] <- mortality
 
@@ -193,6 +215,7 @@ periodTabulate <- function (age_death,
                             method = c('monthly', 'direct'),
                             cohorts = c('one', 'three'),
                             inclusion = c('enter', 'exit', 'both', 'either'),
+                            mortality = c('bin', 'monthly'),
                             nperiod = 1,
                             delay = NULL,
                             verbose = TRUE) {
@@ -201,6 +224,13 @@ periodTabulate <- function (age_death,
   method <- match.arg(method)
   cohorts <- match.arg(cohorts)
   inclusion <- match.arg(inclusion)
+  mortality <- match.arg(mortality)
+
+  # throw a warning is monthly rates are wanted, but monthly mortalities
+  # not used to calculate them
+  if (mortality =='monthly' && method != 'monthly') {
+    stop ("The argument mortality = 'monthly' can only be used if method = 'monthly'")
+  }
 
   # if no delay is specified, get the correct one for the method
   if (is.null(delay)) {
@@ -278,7 +308,8 @@ periodTabulate <- function (age_death,
                        period = period,
                        method = "direct",
                        cohorts = cohorts,
-                       inclusion = c('enter', 'exit', 'both', 'either'),
+                       inclusion = inclusion,
+                       mortality = mortality,
                        nperiod = 1,
                        delay = delay + period * (p - 1),
                        verbose = verbose)
@@ -291,23 +322,39 @@ periodTabulate <- function (age_death,
         exposed_mnth <- tapply(res_tmp$exposed, res_tmp$cluster_id, sum)
         died_mnth <- tapply(res_tmp$died, res_tmp$cluster_id, sum)
 
-        # get expected period exposures
-        exposed_per <- exposed_mnth / n_nw
+        if (mortality == 'bin') {
 
-        # get expected period deaths
-        rate <- 1 - (1 - (died_mnth / (exposed_mnth))) ^ n_nw
+          # get expected period exposures
+          exposed_per <- exposed_mnth / n_nw
 
-        died_per <- rate * exposed_per
+          # get expected period deaths
+          rate <- 1 - (1 - (died_mnth / (exposed_mnth))) ^ n_nw
 
-        # set any 0 total monthly exposures to 0 in the periods
-        exposed_per[exposed_mnth == 0] <- 0
-        died_per[exposed_mnth == 0] <- 0
+          died_per <- rate * exposed_per
+
+          # set any 0 total monthly exposures to 0 in the periods
+          exposed_per[exposed_mnth == 0] <- 0
+          died_per[exposed_mnth == 0] <- 0
+
+          # set exposed and died resultsto these period figures
+          exposed_res <- exposed_per
+          died_res <- died_per
+
+        } else {
+          # otherwise if monthly numbers needed
+
+          # set exposed and died results to the monthly figures
+          exposed_res <- exposed_mnth
+          died_res <- died_mnth
+
+        }
 
         # insert these into the results dataframe
         idx_insert <- which(ans$period == p & ans$age_bin == w)
 
-        ans$exposed[idx_insert] <- exposed_per
-        ans$died[idx_insert] <- died_per
+        ans$exposed[idx_insert] <- exposed_res
+        ans$died[idx_insert] <- died_res
+
 
       }
 
@@ -320,7 +367,7 @@ periodTabulate <- function (age_death,
       lower_mat <- t(expand(windows_lower, n))
 
       # age bin range matrix
-      age_range_mat <- upper_mat - lower_mat
+      age_range_mat <- upper_mat - lower_mat + 1
 
       # data matrices
       age_death <- expand(age_death, nw)

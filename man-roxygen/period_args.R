@@ -30,6 +30,11 @@
 #'   during the cohort time period;
 #'  \code{'either'}, those \emph{either} entering or exiting the target ages
 #'   during the cohort time period;
+#' @param mortality whether to aggregate births/deaths or mortality to return
+#'  mortality across each age bin (if \code{mortality = 'bin'}, the default)
+#'  or to return \emph{monthly} mortality in that age bin (if
+#'  \code{mortality = 'monthly'}). The latter option is only possible if
+#'  \code{method = 'monthly'}, an error will be thrown if this isn't the case.
 #' @param delay the length of time in months prior to the interview date
 #'  to end the period (I.e. the period runs from \code{period + delay} months
 #'  before the interview date to \code{period} days before).

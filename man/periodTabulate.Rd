@@ -7,8 +7,9 @@
 periodTabulate(age_death, birth_int, cluster_id, windows_lower = c(0, 1, 3, 6,
   12, 24, 36, 48), windows_upper = c(0, 2, 5, 11, 23, 35, 47, 59),
   period = 60, method = c("monthly", "direct"), cohorts = c("one",
-  "three"), inclusion = c("enter", "exit", "both", "either"), nperiod = 1,
-  delay = NULL, verbose = TRUE)
+  "three"), inclusion = c("enter", "exit", "both", "either"),
+  mortality = c("bin", "monthly"), nperiod = 1, delay = NULL,
+  verbose = TRUE)
 }
 \arguments{
 \item{age_death}{numeric vector giving the age of death in months of each
@@ -49,6 +50,12 @@ but the numbers divided by two.}
  during the cohort time period;
 \code{'either'}, those \emph{either} entering or exiting the target ages
  during the cohort time period;}
+
+\item{mortality}{whether to aggregate births/deaths or mortality to return
+mortality across each age bin (if \code{mortality = 'bin'}, the default)
+or to return \emph{monthly} mortality in that age bin (if
+\code{mortality = 'monthly'}). The latter option is only possible if
+\code{method = 'monthly'}, an error will be thrown if this isn't the case.}
 
 \item{nperiod}{the number of consecutive periods to calculate for. I.e.
  if \code{period = 12} and \code{nperiod = 3}, numbers will be returned for

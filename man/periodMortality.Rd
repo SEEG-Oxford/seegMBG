@@ -2,7 +2,8 @@
 % Please edit documentation in R/demography_functions.R
 \name{periodMortality}
 \alias{periodMortality}
-\title{Synthetic Cohort Life Table Child Mortality Estimation}
+\alias{periodTabulate}
+\title{Period Mortality Rate Tabulation and Estimation}
 \usage{
 periodMortality(age_death, birth_int, cluster_id, windows_lower = c(0, 1, 3,
   6, 12, 24, 36, 48), windows_upper = c(0, 2, 5, 11, 23, 35, 47, 59),
@@ -11,86 +12,109 @@ periodMortality(age_death, birth_int, cluster_id, windows_lower = c(0, 1, 3,
   inclusion = c("enter", "exit", "both", "either"), mortality = c("bin",
   "monthly"), delay = max(windows_upper - windows_lower), glm = FALSE,
   verbose = TRUE, ...)
+
+periodTabulate(age_death, birth_int, cluster_id, windows_lower = c(0, 1, 3, 6,
+  12, 24, 36, 48), windows_upper = c(0, 2, 5, 11, 23, 35, 47, 59),
+  period = 60, method = c("monthly", "direct"), cohorts = c("one",
+  "three"), inclusion = c("enter", "exit", "both", "either"),
+  mortality = c("bin", "monthly"), nperiod = 1, delay = NULL,
+  verbose = TRUE)
 }
 \arguments{
 \item{age_death}{numeric vector giving the age of death in months of each
-child. Note that if the child is still alive at the time of interview,
-corresponding eleents of \code{age_death} should be given a number greater
-than \code{max(windows_upper)}}
+ child. Note that if the child is still alive at the time of interview,
+ corresponding eleents of \code{age_death} should be given a number greater
+ than \code{max(windows_upper)}}
 
 \item{birth_int}{numeric vector giving the time in month between the
-child's birth and the interview}
+ child's birth and the interview}
 
 \item{cluster_id}{vector giving the cluster identifier (can be numeric,
-cahracter or factor)}
+ cahracter or factor)}
 
 \item{windows_lower,windows_upper}{numeric vectors giving the
-non-overlapping lower and upper ages in months of each survival window}
+ non-overlapping lower and upper ages in months of each survival window}
 
 \item{ages_lower,ages_upper}{numeric vectors giving the
-non-overlapping lower and upper ages in months of the age windows for
-which to estimate mortality rates}
+ non-overlapping lower and upper ages in months of the age windows for
+ which to estimate mortality rates}
 
 \item{period}{the length of time in months for which mortality rates
-should be estimated, either vector or scalar}
+ should be estimated, either vector or scalar}
 
 \item{method}{the method used to tabulate exposures and deaths, either by
-combining monthly exposures within the window (\code{method = 'monthly'})
-or directly counting the individuals exposed over the whole period
-(\code{method = 'direct'})}
+ combining monthly exposures within the window (\code{method = 'monthly'})
+ or directly counting the individuals exposed over the whole period
+ (\code{method = 'direct'})}
 
 \item{cohorts}{the number of cohorts used to tabulate exposures and deaths
-for each age bins. If \code{cohorts = 'one'} then only individuals falling
-starting and ending the age bin inside the period are counted. If
-\code{cohorts = 'three'} then individuals starting but not ending,
-or ending but not starting, the age bin inside the period are also counted
-but the numbers divided by two.}
+ for each age bins. If \code{cohorts = 'one'} then only individuals falling
+ starting and ending the age bin inside the period are counted. If
+ \code{cohorts = 'three'} then individuals starting but not ending,
+ or ending but not starting, the age bin inside the period are also counted
+ but the numbers divided by two.}
 
 \item{inclusion}{which individuals to include in each cohort:
-\code{'enter'}, those \emph{entering} the target ages during the cohort
- time period;
-\code{'exit'}, those \emph{exiting} the target ages during the cohort time
- period;
-\code{'both'}, those \emph{both} entering and exiting the target ages
- during the cohort time period;
-\code{'either'}, those \emph{either} entering or exiting the target ages
- during the cohort time period;}
+ \code{'enter'}, those \emph{entering} the target ages during the cohort
+  time period;
+ \code{'exit'}, those \emph{exiting} the target ages during the cohort time
+  period;
+ \code{'both'}, those \emph{both} entering and exiting the target ages
+  during the cohort time period;
+ \code{'either'}, those \emph{either} entering or exiting the target ages
+  during the cohort time period;}
 
 \item{mortality}{whether to aggregate births/deaths or mortality to return
-mortality across each age bin (if \code{mortality = 'bin'}, the default)
-or to return \emph{monthly} mortality in that age bin (if
-\code{mortality = 'monthly'}). The latter option is only possible if
-\code{method = 'monthly'}, an error will be thrown if this isn't the case.}
+ mortality across each age bin (if \code{mortality = 'bin'}, the default)
+ or to return \emph{monthly} mortality in that age bin (if
+ \code{mortality = 'monthly'}). The latter option is only possible if
+ \code{method = 'monthly'}, an error will be thrown if this isn't the case.}
 
 \item{delay}{the length of time in months prior to the interview date
-to end the period (I.e. the period runs from \code{period + delay} months
-before the interview date to \code{period} days before).
-Either vector scalar, or \code{NULL}, in which case the default delay for
-\code{cohorts} is used: for \code{cohorts = 'one'} \code{delay = 0}; for
-\code{cohorts = 'three'}
-\code{delay = max(windows_upper - windows_lower)}.}
+ to end the period (I.e. the period runs from \code{period + delay} months
+ before the interview date to \code{period} days before).
+ Either vector scalar, or \code{NULL}, in which case the default delay for
+ \code{cohorts} is used: for \code{cohorts = 'one'} \code{delay = 0}; for
+ \code{cohorts = 'three'}
+ \code{delay = max(windows_upper - windows_lower)}.}
 
 \item{glm}{whether to infer the window-specific survival probabilities
-using a binomial random effects model across cluster, window and cohort.
-If \code{FALSE} probabilities are calculated as the raw ratio of the
-number that survived to the number exposed and may therefore contain
-zeros and indeterminate values.}
+ using a binomial random effects model across cluster, window and cohort.
+ If \code{FALSE} probabilities are calculated as the raw ratio of the
+ number that survived to the number exposed and may therefore contain
+ zeros and indeterminate values.}
 
 \item{verbose}{whether to regularly report the stage of the analysis}
+
+\item{nperiod}{the number of consecutive periods to calculate for. I.e.
+ if \code{period = 12} and \code{nperiod = 3}, numbers will be returned for
+ periods 0-12, 13-24 and 25-36 months prior to the interview (plus delay).}
 
 \item{\dots}{other arguments to pass to \code{INLA::inla}}
 }
 \value{
-a dataframe with the same number of columns as elements in
+\code{periodMortality}: a dataframe with the same number of columns as elements in
  \code{ages_lower}, each column giving the estimated mortality rates for
  the corresponding age bin in each cluster.
+
+\code{periodTabulate}: a dataframe with number of rows equal to all combinations of
+ clusters, age bins and periods; i.e.
+ \code{length(unique(cluster_id)) * length(windows_lower) * nperiod},
+ and four columns:
+ \itemize{
+   \item \code{cluster_id} identifier for the cluster
+   \item \code{exposed} number exposed in a given period and age bin
+   \item \code{died} number exposed and died in a given period and age bin
+   \item \code{period} the corresponding period number
+   \item \code{age_bin} the corresponding age bin number
+ }
 }
 \description{
-Compute child mortality estimates using the DHS three-cohort
- life table approach.
+Compute period mortality estimates, or tabulate
+exposures/deaths, using DHS or IHME methods
 }
 \note{
-This function enables reconstruction of the DHS three-cohort method,
+These functions enable reconstruction of the DHS three-cohort method,
  as well as the IHME method, for estimating period mortality rates via
  specification of the \code{method},\code{cohorts} and \code{inclusion}
  arguments. For the IHME method, the user should specify:

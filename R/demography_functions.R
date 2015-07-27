@@ -3,28 +3,26 @@
 #' @name periodMortality
 #' @rdname periodMortality
 #'
-#' @title Synthetic Cohort Life Table Child Mortality Estimation
-#' @description Compute child mortality estimates using the DHS three-cohort
-#'  life table approach.
-#'
 #' @template period_args
+#'
 #' @param ages_lower,ages_upper numeric vectors giving the
 #'  non-overlapping lower and upper ages in months of the age windows for
 #'  which to estimate mortality rates
+#'
 #' @param glm whether to infer the window-specific survival probabilities
 #'  using a binomial random effects model across cluster, window and cohort.
 #'  If \code{FALSE} probabilities are calculated as the raw ratio of the
 #'  number that survived to the number exposed and may therefore contain
 #'  zeros and indeterminate values.
+#'
 #' @param \dots other arguments to pass to \code{INLA::inla}
 #'
-#' @export
-#'
-#' @import INLA
-#'
-#' @return a dataframe with the same number of columns as elements in
+#' @return \code{periodMortality}: a dataframe with the same number of columns as elements in
 #'  \code{ages_lower}, each column giving the estimated mortality rates for
 #'  the corresponding age bin in each cluster.
+#'
+#' @export
+#' @import INLA
 #'
 periodMortality <- function (age_death,
                              birth_int,
@@ -42,6 +40,12 @@ periodMortality <- function (age_death,
                              glm = FALSE,
                              verbose = TRUE,
                              ...) {
+
+  # throw a warning is monthly rates are wanted, but monthly mortalities
+  # not used to calculate them
+  if (mortality =='monthly' && method != 'monthly') {
+    stop ("The argument mortality = 'monthly' can only be used if method = 'monthly'")
+  }
 
   # check incoming data
   n <- length(age_death)
@@ -181,20 +185,15 @@ periodMortality <- function (age_death,
 # function to count number exposed/died for each cluster in each
 # age group
 #' @name periodTabulate
-#' @rdname periodTabulate
+#' @rdname periodMortality
 #'
-#' @title Tabulate Exposures/Deaths from CBH records
-#' @description Count the number exposed and number dying
-#'  in a given set of age ranges and time periods
-#'
-#' @template period_args
 #' @param nperiod the number of consecutive periods to calculate for. I.e.
 #'  if \code{period = 12} and \code{nperiod = 3}, numbers will be returned for
 #'  periods 0-12, 13-24 and 25-36 months prior to the interview (plus delay).
 #'
 #' @export
 #'
-#' @return a dataframe with number of rows equal to all combinations of
+#' @return \code{periodTabulate}: a dataframe with number of rows equal to all combinations of
 #'  clusters, age bins and periods; i.e.
 #'  \code{length(unique(cluster_id)) * length(windows_lower) * nperiod},
 #'  and four columns:
@@ -225,12 +224,6 @@ periodTabulate <- function (age_death,
   cohorts <- match.arg(cohorts)
   inclusion <- match.arg(inclusion)
   mortality <- match.arg(mortality)
-
-  # throw a warning is monthly rates are wanted, but monthly mortalities
-  # not used to calculate them
-  if (mortality =='monthly' && method != 'monthly') {
-    stop ("The argument mortality = 'monthly' can only be used if method = 'monthly'")
-  }
 
   # if no delay is specified, get the correct one for the method
   if (is.null(delay)) {

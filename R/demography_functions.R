@@ -147,7 +147,7 @@ periodMortality <- function (age_death,
     if (mortality == 'bin') {
 
       # if the whole bin is wanted, it's the product of all probabilities
-      mortality <- 1 - rowProds(survival_mat[, index, drop = FALSE])
+      mort <- 1 - rowProds(survival_mat[, index, drop = FALSE])
 
     } else if (mortality == 'monthly') {
 
@@ -158,14 +158,14 @@ periodMortality <- function (age_death,
       months <- 1 + windows_upper[index] - windows_lower[index]
 
       # get weighted mean rate
-      mortality <- apply(survival_mat[, index, drop = FALSE],
+      mort <- apply(survival_mat[, index, drop = FALSE],
                          1,
                          weighted.mean,
                          w = months)
 
     }
 
-    ans[[i]] <- mortality
+    ans[[i]] <- mort
 
   }
 

@@ -95,9 +95,9 @@ periodMortality <- function (age_death,
   # results for all periods
   res <- list()
 
-  for (i in 1:nperiod) {
+  for (j in 1:nperiod) {
 
-    df <- df_all[df_all$period == i, ]
+    df <- df_all[df_all$period == j, ]
 
     # fit the required model
     if (glm) {
@@ -194,7 +194,7 @@ periodMortality <- function (age_death,
     names(ans) <- paste0('ages_', ages_lower, '_', ages_upper)
     rownames(ans) <- unique(df$cluster_id)
 
-    res[[i]] <- ans
+    res[[j]] <- ans
 
   }
 

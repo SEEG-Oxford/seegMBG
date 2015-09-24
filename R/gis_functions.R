@@ -307,6 +307,10 @@ getPoints <- function (shape,
   # coerce x to be a dataframe
   x <- as.data.frame(x)
 
+  # make sure there aren't more centres than unique datapoints
+  n_unique <- nrow(unique(x))
+  n <- pmin(n, n_unique)
+
   # k-means cluster the data
   kmn <- kmeans(x, n)
 

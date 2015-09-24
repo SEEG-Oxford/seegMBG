@@ -3,28 +3,27 @@
 #' @name periodMortality
 #' @rdname periodMortality
 #'
-#' @title Synthetic Cohort Life Table Child Mortality Estimation
-#' @description Compute child mortality estimates using the DHS three-cohort
-#'  life table approach.
-#'
 #' @template period_args
+#'
 #' @param ages_lower,ages_upper numeric vectors giving the
 #'  non-overlapping lower and upper ages in months of the age windows for
 #'  which to estimate mortality rates
+#'
 #' @param glm whether to infer the window-specific survival probabilities
 #'  using a binomial random effects model across cluster, window and cohort.
 #'  If \code{FALSE} probabilities are calculated as the raw ratio of the
 #'  number that survived to the number exposed and may therefore contain
 #'  zeros and indeterminate values.
+#'
 #' @param \dots other arguments to pass to \code{INLA::inla}
 #'
-#' @export
-#'
-#' @import INLA
-#'
-#' @return a dataframe with the same number of columns as elements in
-#'  \code{ages_lower}, each column giving the estimated mortality rates for
+#' @return \code{periodMortality}: a list with one element for each period,
+#'  each element being a dataframe with the same number of columns as elements
+#'  in \code{ages_lower}, each column giving the estimated mortality rates for
 #'  the corresponding age bin in each cluster.
+#'
+#' @export
+#' @import INLA
 #'
 periodMortality <- function (age_death,
                              birth_int,
@@ -38,10 +37,17 @@ periodMortality <- function (age_death,
                              cohorts = c('one', 'three'),
                              inclusion = c('enter', 'exit', 'both', 'either'),
                              mortality = c('bin', 'monthly'),
+                             nperiod = 1,
                              delay = max(windows_upper - windows_lower),
                              glm = FALSE,
                              verbose = TRUE,
                              ...) {
+
+  # throw a warning is monthly rates are wanted, but monthly mortalities
+  # not used to calculate them
+  if (mortality =='monthly' && method != 'monthly') {
+    stop ("The argument mortality = 'monthly' can only be used if method = 'monthly'")
+  }
 
   # check incoming data
   n <- length(age_death)
@@ -69,111 +75,133 @@ periodMortality <- function (age_death,
   }
 
   # tabulate data for analysis
-  df <- periodTabulate(age_death = age_death,
-                       birth_int = birth_int,
-                       cluster_id = cluster_id,
-                       windows_lower = windows_lower,
-                       windows_upper = windows_upper,
-                       period = period,
-                       method = method,
-                       cohorts = cohorts,
-                       inclusion = inclusion,
-                       mortality = mortality,
-                       nperiod = 1,
-                       delay = delay,
-                       verbose = verbose)
+  df_all <- periodTabulate(age_death = age_death,
+                           birth_int = birth_int,
+                           cluster_id = cluster_id,
+                           windows_lower = windows_lower,
+                           windows_upper = windows_upper,
+                           period = period,
+                           method = method,
+                           cohorts = cohorts,
+                           inclusion = inclusion,
+                           mortality = mortality,
+                           nperiod = 1,
+                           delay = delay,
+                           verbose = verbose)
 
-  # fit the required model
-  if (glm) {
 
-    # round up the deaths and exposures
-    df$exposed <- ceiling(df$exposed)
-    df$died <- ceiling(df$died)
+  # loop through periods
 
-    # make sure there aren't more deaths than exposures, from rounding errors
-    df$exposed <- pmax(df$exposed, df$died)
+  # results for all periods
+  res <- list()
 
-    # define the formula
-    f <- died ~ 1 + f(age_bin, model = 'iid') + f(cluster_id, model = 'iid')
+  for (j in 1:nperiod) {
 
-    # notify the user the model's running
-    if (verbose) message('running glm')
+    df <- df_all[df_all$period == j, ]
 
-    # fit the model
-    m <- inla(f,
-              data = df,
-              family = 'binomial',
-              Ntrials = df$exposed,
-              control.predictor = list(compute = TRUE),
-              ...)
+    # fit the required model
+    if (glm) {
 
-    # get fitted mortality probabilities
-    p <- m$summary.fitted.values$mode
+      # round up the deaths and exposures
+      df$exposed <- ceiling(df$exposed)
+      df$died <- ceiling(df$died)
 
-    # reformat to a matrix
-    p <- matrix(p, ncol = nw, byrow = TRUE)
+      # make sure there aren't more deaths than exposures, from rounding errors
+      df$exposed <- pmax(df$exposed, df$died)
 
-    # get the fitted values
-    survival_mat <- 1 - p  # matrix of cluster by window survival probabilities
+      # define the formula
+      f <- died ~ 1 + f(age_bin, model = 'iid') + f(cluster_id, model = 'iid')
 
-  } else {
+      # notify the user the model's running
+      if (verbose) message('running glm')
 
-    # get raw survival rates for each window, for each cluster
-    survival_rates <- 1 - df$died / df$exposed
+      # fit the model
+      m <- inla(f,
+                data = df,
+                family = 'binomial',
+                Ntrials = df$exposed,
+                control.predictor = list(compute = TRUE),
+                ...)
 
-    # reformat as a matrix
-    survival_mat <- matrix(survival_rates,
-                           ncol = nw,
-                           byrow = TRUE)
+      # get fitted mortality probabilities
+      p <- m$summary.fitted.values$mode
 
-  }
+      # reformat to a matrix
+      p <- matrix(p, ncol = nw, byrow = TRUE)
 
-  if (verbose) message('computing survival probabilities')
+      # get the fitted values
+      survival_mat <- 1 - p  # matrix of cluster by window survival probabilities
 
-  # get results
-  ans <- list()
+    } else {
 
-  # loop through age bins for which mortality estimates are needed
-  for (i in 1:na) {
+      # get raw survival rates for each window, for each cluster
+      survival_rates <- 1 - df$died / df$exposed
 
-    index <- windows_lower < ages_upper[i] &
-      windows_upper > ages_lower[i]
-
-    # get bin mortality estimates
-    if (mortality == 'bin') {
-
-      # if the whole bin is wanted, it's the product of all probabilities
-      mortality <- 1 - rowProds(survival_mat[, index, drop = FALSE])
-
-    } else if (mortality == 'monthly') {
-
-      # if the monthly mortality estimate is needed, it's the
-      # mean rate weighted by the number of months
-
-      # get number of months in each bin in the required age bin
-      months <- 1 + windows_upper[index] - windows_lower[index]
-
-      # get weighted mean rate
-      mortality <- apply(survival_mat[, index, drop = FALSE],
-                         1,
-                         weighted.mean,
-                         w = months)
+      # reformat as a matrix
+      survival_mat <- matrix(survival_rates,
+                             ncol = nw,
+                             byrow = TRUE)
 
     }
 
-    ans[[i]] <- mortality
+    if (verbose) message('computing survival probabilities')
+
+    # get results
+    ans <- list()
+
+    # loop through age bins for which mortality estimates are needed
+    for (i in 1:na) {
+
+      # if it's a one-month window, match exactly
+      if (ages_lower[i] == ages_upper[i]) {
+        index <- windows_lower == ages_upper[i] &
+          windows_upper == ages_lower[i]
+      } else{
+        index <- windows_lower <= ages_upper[i] &
+          windows_upper > ages_lower[i]
+      }
+
+      # get bin mortality estimates
+      if (mortality == 'bin') {
+
+        # if the whole bin is wanted, it's the product of all probabilities
+        mort <- 1 - rowProds(survival_mat[, index, drop = FALSE])
+
+      } else if (mortality == 'monthly') {
+
+        # if the monthly mortality estimate is needed, it's the
+        # mean rate weighted by the number of months
+
+        # get number of months in each bin in the required age bin
+        months <- 1 + windows_upper[index] - windows_lower[index]
+
+        # get weighted mean rate
+        mort <- apply(survival_mat[, index, drop = FALSE],
+                      1,
+                      weighted.mean,
+                      w = months)
+
+      }
+
+      ans[[i]] <- mort
+
+    }
+
+    # convert to a dataframe
+    ans <- data.frame(ans)
+
+    # add names
+    names(ans) <- paste0('ages_', ages_lower, '_', ages_upper)
+    rownames(ans) <- unique(df$cluster_id)
+
+    res[[j]] <- ans
 
   }
 
-  # convert to a dataframe
-  ans <- data.frame(ans)
+  # name and return the results
+  names(res) <- paste0('period_', 1:nperiod)
 
-  # add names
-  names(ans) <- paste0('ages_', ages_lower, '_', ages_upper)
-  rownames(ans) <- unique(df$cluster_id)
-
-  # return this
-  return (ans)
+  return (res)
 
 }
 
@@ -181,20 +209,11 @@ periodMortality <- function (age_death,
 # function to count number exposed/died for each cluster in each
 # age group
 #' @name periodTabulate
-#' @rdname periodTabulate
-#'
-#' @title Tabulate Exposures/Deaths from CBH records
-#' @description Count the number exposed and number dying
-#'  in a given set of age ranges and time periods
-#'
-#' @template period_args
-#' @param nperiod the number of consecutive periods to calculate for. I.e.
-#'  if \code{period = 12} and \code{nperiod = 3}, numbers will be returned for
-#'  periods 0-12, 13-24 and 25-36 months prior to the interview (plus delay).
+#' @rdname periodMortality
 #'
 #' @export
 #'
-#' @return a dataframe with number of rows equal to all combinations of
+#' @return \code{periodTabulate}: a dataframe with number of rows equal to all combinations of
 #'  clusters, age bins and periods; i.e.
 #'  \code{length(unique(cluster_id)) * length(windows_lower) * nperiod},
 #'  and four columns:
@@ -226,12 +245,6 @@ periodTabulate <- function (age_death,
   inclusion <- match.arg(inclusion)
   mortality <- match.arg(mortality)
 
-  # throw a warning is monthly rates are wanted, but monthly mortalities
-  # not used to calculate them
-  if (mortality =='monthly' && method != 'monthly') {
-    stop ("The argument mortality = 'monthly' can only be used if method = 'monthly'")
-  }
-
   # if no delay is specified, get the correct one for the method
   if (is.null(delay)) {
     delay <- switch(cohorts,
@@ -241,8 +254,8 @@ periodTabulate <- function (age_death,
 
   # match up the cohorts
   cohort_names <- switch(cohorts,
-                    one = 'B',
-                    three = c('A', 'B', 'C'))
+                         one = 'B',
+                         three = c('A', 'B', 'C'))
 
   # get unique clusters
   clusters <- unique(cluster_id)
@@ -301,18 +314,18 @@ periodTabulate <- function (age_death,
         # recursively call this function with method = direct, calculating
         # numbers for monthly bins
         res_tmp <- periodTabulate(age_death = age_death,
-                       birth_int = birth_int,
-                       cluster_id = cluster_id,
-                       windows_lower = new_windows[-n_nw],
-                       windows_upper = new_windows[-1],
-                       period = period,
-                       method = "direct",
-                       cohorts = cohorts,
-                       inclusion = inclusion,
-                       mortality = mortality,
-                       nperiod = 1,
-                       delay = delay + period * (p - 1),
-                       verbose = verbose)
+                                  birth_int = birth_int,
+                                  cluster_id = cluster_id,
+                                  windows_lower = new_windows[-n_nw],
+                                  windows_upper = new_windows[-1],
+                                  period = period,
+                                  method = "direct",
+                                  cohorts = cohorts,
+                                  inclusion = inclusion,
+                                  mortality = mortality,
+                                  nperiod = 1,
+                                  delay = delay + period * (p - 1),
+                                  verbose = verbose)
 
         # this returns cluster-level deaths & exposures for each age bin
         # next, combine them to get expected numbers of period exposures

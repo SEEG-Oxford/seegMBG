@@ -10,8 +10,8 @@ periodMortality(age_death, birth_int, cluster_id, windows_lower = c(0, 1, 3,
   ages_lower = c(0, 0), ages_upper = c(12, 60), period = 60,
   method = c("monthly", "direct"), cohorts = c("one", "three"),
   inclusion = c("enter", "exit", "both", "either"), mortality = c("bin",
-  "monthly"), delay = max(windows_upper - windows_lower), glm = FALSE,
-  verbose = TRUE, ...)
+  "monthly"), nperiod = 1, delay = max(windows_upper - windows_lower),
+  glm = FALSE, verbose = TRUE, ...)
 
 periodTabulate(age_death, birth_int, cluster_id, windows_lower = c(0, 1, 3, 6,
   12, 24, 36, 48), windows_upper = c(0, 2, 5, 11, 23, 35, 47, 59),
@@ -70,6 +70,10 @@ periodTabulate(age_death, birth_int, cluster_id, windows_lower = c(0, 1, 3, 6,
  \code{mortality = 'monthly'}). The latter option is only possible if
  \code{method = 'monthly'}, an error will be thrown if this isn't the case.}
 
+\item{nperiod}{the number of consecutive periods to calculate for. I.e.
+ if \code{period = 12} and \code{nperiod = 3}, numbers will be returned for
+ periods 0-12, 13-24 and 25-36 months prior to the interview (plus delay).}
+
 \item{delay}{the length of time in months prior to the interview date
  to end the period (I.e. the period runs from \code{period + delay} months
  before the interview date to \code{period} days before).
@@ -86,15 +90,12 @@ periodTabulate(age_death, birth_int, cluster_id, windows_lower = c(0, 1, 3, 6,
 
 \item{verbose}{whether to regularly report the stage of the analysis}
 
-\item{nperiod}{the number of consecutive periods to calculate for. I.e.
- if \code{period = 12} and \code{nperiod = 3}, numbers will be returned for
- periods 0-12, 13-24 and 25-36 months prior to the interview (plus delay).}
-
 \item{\dots}{other arguments to pass to \code{INLA::inla}}
 }
 \value{
-\code{periodMortality}: a dataframe with the same number of columns as elements in
- \code{ages_lower}, each column giving the estimated mortality rates for
+\code{periodMortality}: a list with one element for each period,
+ each element being a dataframe with the same number of columns as elements
+ in \code{ages_lower}, each column giving the estimated mortality rates for
  the corresponding age bin in each cluster.
 
 \code{periodTabulate}: a dataframe with number of rows equal to all combinations of

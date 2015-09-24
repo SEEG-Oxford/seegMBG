@@ -49,6 +49,10 @@
 #'  \code{mortality = 'monthly'}). The latter option is only possible if
 #'  \code{method = 'monthly'}, an error will be thrown if this isn't the case.
 #'
+#' @param nperiod the number of consecutive periods to calculate for. I.e.
+#'  if \code{period = 12} and \code{nperiod = 3}, numbers will be returned for
+#'  periods 0-12, 13-24 and 25-36 months prior to the interview (plus delay).
+#'
 #' @param delay the length of time in months prior to the interview date
 #'  to end the period (I.e. the period runs from \code{period + delay} months
 #'  before the interview date to \code{period} days before).

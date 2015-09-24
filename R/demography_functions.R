@@ -140,7 +140,7 @@ periodMortality <- function (age_death,
   # loop through age bins for which mortality estimates are needed
   for (i in 1:na) {
 
-    index <- windows_lower < ages_upper[i] &
+    index <- windows_lower <= ages_upper[i] &
       windows_upper > ages_lower[i]
 
     # get bin mortality estimates

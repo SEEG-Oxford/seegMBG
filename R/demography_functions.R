@@ -85,7 +85,7 @@ periodMortality <- function (age_death,
                            cohorts = cohorts,
                            inclusion = inclusion,
                            mortality = mortality,
-                           nperiod = 1,
+                           nperiod = nperiod,
                            delay = delay,
                            verbose = verbose)
 

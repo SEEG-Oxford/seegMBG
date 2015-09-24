@@ -97,7 +97,7 @@ periodMortality <- function (age_death,
 
   for (i in 1:nperiod) {
 
-    df <- df_all[df_all$period == i]
+    df <- df_all[df_all$period == i, ]
 
     # fit the required model
     if (glm) {

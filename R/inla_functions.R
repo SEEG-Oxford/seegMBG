@@ -224,7 +224,7 @@ predictRasterINLA <- function (inla, raster, mesh, constants = list(), ...) {
   # prepare data
 
   # find valid cells
-  cells <- notMissingIdx(raster[[1]])
+  cells <- seegSDM:::notMissingIdx(raster[[1]])
 
   # get values at these locations
   data <- getValues(raster)[cells, ]

@@ -285,12 +285,22 @@ periodTabulate <- function (age_death,
 
     # run chunks in parallel
     ans_list <- parallel::parLapply(cl = cl,
-                                   indices,
-                                   parfun,
-                                   age_death,
-                                   birth_int,
-                                   cluster_id,
-                                   ...)
+                                    indices,
+                                    parfun,
+                                    age_death,
+                                    birth_int,
+                                    cluster_id,
+                                    windows_lower = windows_lower,
+                                    windows_upper = windows_upper,
+                                    period = period,
+                                    method = method,
+                                    cohorts = cohorts,
+                                    inclusion = inclusion,
+                                    mortality = mortality,
+                                    nperiod = nperiod,
+                                    delay = delay,
+                                    verbose = verbose,
+                                    n_cores = 1)
 
     # recombine results into ans
 

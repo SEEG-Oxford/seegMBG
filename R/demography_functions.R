@@ -284,7 +284,7 @@ periodTabulate <- function (age_death,
     cl <- parallel::makeCluster(n_cores)
 
     # run chunks in parallel
-    ans_list < parallel::parLapply(cl = cl,
+    ans_list <- parallel::parLapply(cl = cl,
                                    indices,
                                    parfun,
                                    age_death,

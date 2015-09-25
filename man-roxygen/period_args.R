@@ -63,6 +63,12 @@
 #'
 #' @param verbose whether to regularly report the stage of the analysis
 #'
+#' @param n_cores the number of cores on which to carry out computations.
+#'  \code{periodTabulate} will split clusters up and run them on separate cores,
+#'  and in \code{periodMortality} if \code{method = 'glm'}, this is passed
+#'  to the \code{num.threads)} agument of \code{INLA::inla}.
+#'  To run everything sequentially (the default), just set \code{n_cores = 1}.
+#'
 #' @note These functions enable reconstruction of the DHS three-cohort method,
 #'  as well as the IHME method, for estimating period mortality rates via
 #'  specification of the \code{method},\code{cohorts} and \code{inclusion}

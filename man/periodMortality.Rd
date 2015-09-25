@@ -11,14 +11,14 @@ periodMortality(age_death, birth_int, cluster_id, windows_lower = c(0, 1, 3,
   method = c("monthly", "direct"), cohorts = c("one", "three"),
   inclusion = c("enter", "exit", "both", "either"), mortality = c("bin",
   "monthly"), nperiod = 1, delay = max(windows_upper - windows_lower),
-  glm = FALSE, verbose = TRUE, ...)
+  glm = FALSE, verbose = TRUE, n_cores = 1, ...)
 
 periodTabulate(age_death, birth_int, cluster_id, windows_lower = c(0, 1, 3, 6,
   12, 24, 36, 48), windows_upper = c(0, 2, 5, 11, 23, 35, 47, 59),
   period = 60, method = c("monthly", "direct"), cohorts = c("one",
   "three"), inclusion = c("enter", "exit", "both", "either"),
   mortality = c("bin", "monthly"), nperiod = 1, delay = NULL,
-  verbose = TRUE)
+  verbose = TRUE, n_cores = 1)
 }
 \arguments{
 \item{age_death}{numeric vector giving the age of death in months of each
@@ -89,6 +89,12 @@ periodTabulate(age_death, birth_int, cluster_id, windows_lower = c(0, 1, 3, 6,
  zeros and indeterminate values.}
 
 \item{verbose}{whether to regularly report the stage of the analysis}
+
+\item{n_cores}{the number of cores on which to carry out computations.
+ \code{periodTabulate} will split clusters up and run them on separate cores,
+ and in \code{periodMortality} if \code{method = 'glm'}, this is passed
+ to the \code{num.threads)} agument of \code{INLA::inla}.
+ To run everything sequentially (the default), just set \code{n_cores = 1}.}
 
 \item{\dots}{other arguments to pass to \code{INLA::inla}}
 }

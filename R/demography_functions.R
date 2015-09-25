@@ -41,7 +41,11 @@ periodMortality <- function (age_death,
                              delay = max(windows_upper - windows_lower),
                              glm = FALSE,
                              verbose = TRUE,
+                             n_cores = 1,
                              ...) {
+
+  # check the number of cores is valid
+
 
   # throw a warning is monthly rates are wanted, but monthly mortalities
   # not used to calculate them
@@ -87,7 +91,8 @@ periodMortality <- function (age_death,
                            mortality = mortality,
                            nperiod = nperiod,
                            delay = delay,
-                           verbose = verbose)
+                           verbose = verbose,
+                           n_cores = n_cores)
 
 
   # loop through periods
@@ -101,6 +106,12 @@ periodMortality <- function (age_death,
 
     # fit the required model
     if (glm) {
+
+      if (n_cores == 1) {
+        inla_threads <- NULL
+      } else {
+        inla_threads <- n_cores
+      }
 
       # round up the deaths and exposures
       df$exposed <- ceiling(df$exposed)
@@ -121,6 +132,7 @@ periodMortality <- function (age_death,
                 family = 'binomial',
                 Ntrials = df$exposed,
                 control.predictor = list(compute = TRUE),
+                num.threads = inla_threads,
                 ...)
 
       # get fitted mortality probabilities
@@ -237,7 +249,61 @@ periodTabulate <- function (age_death,
                             mortality = c('bin', 'monthly'),
                             nperiod = 1,
                             delay = NULL,
-                            verbose = TRUE) {
+                            verbose = TRUE,
+                            n_cores = 1) {
+
+  # parallelism by recursion
+  if (n_cores > 1) {
+
+    # let the user know
+    message(sprintf('running periodTabulate on %s cores', n_cores))
+
+    # check data sizes
+    stopifnot(length(birth_int) == length(age_death))
+    stopifnot(length(cluster_id) == length(age_death))
+
+    # split up data
+    n <- length(age_death)
+
+    # split indices for cores
+    indices <- parallel::splitIndices(n, n_cores)
+
+    # define function to act on indices
+    parfun <- function (idx,
+                        age_death,
+                        birth_int,
+                        cluster_id,
+                        ...) {
+      periodTabulate(age_death = age_death[idx],
+                     birth_int = birth_int[idx],
+                     cluster_id = cluster_id[idx],
+                     ...)
+    }
+
+    # set up cluster
+    cl <- parallel::makeCluster(n_cores)
+
+    # run chunks in parallel
+    ans_list < parallel::parLapply(cl = cl,
+                                   indices,
+                                   parfun,
+                                   age_death,
+                                   birth_int,
+                                   cluster_id,
+                                   ...)
+
+    # recombine results into ans
+
+    for (i in 1:nperiod) {
+      list <- lapply(ans_list, '[[', i)
+
+      ans_list[[1]][[i]] <- do.call(rbind, list)
+
+    }
+
+    ans <- ans_list[[1]]
+    return (ans)
+  }
 
   # get the tabulation method
   method <- match.arg(method)

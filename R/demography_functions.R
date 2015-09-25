@@ -283,28 +283,28 @@ periodTabulate <- function (age_death,
     }
 
     # set up cluster
-    snowfall::sfInit(parallel = TRUE, cpus = n_cores)
+    sfInit(parallel = TRUE, cpus = n_cores)
 
     # close it on finishing or error
     on.exit(sfStop())
 
     # run chunks in parallel
-    ans_list <- snowfall::sfLapply(indices,
-                                   parfun,
-                                   age_death,
-                                   birth_int,
-                                   cluster_id,
-                                   windows_lower = windows_lower,
-                                   windows_upper = windows_upper,
-                                   period = period,
-                                   method = method,
-                                   cohorts = cohorts,
-                                   inclusion = inclusion,
-                                   mortality = mortality,
-                                   nperiod = nperiod,
-                                   delay = delay,
-                                   verbose = verbose,
-                                   n_cores = 1)
+    ans_list <- sfLapply(indices,
+                         parfun,
+                         age_death,
+                         birth_int,
+                         cluster_id,
+                         windows_lower = windows_lower,
+                         windows_upper = windows_upper,
+                         period = period,
+                         method = method,
+                         cohorts = cohorts,
+                         inclusion = inclusion,
+                         mortality = mortality,
+                         nperiod = nperiod,
+                         delay = delay,
+                         verbose = verbose,
+                         n_cores = 1)
 
     # recombine results into ans
 

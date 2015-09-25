@@ -176,10 +176,10 @@ periodMortality <- function (age_death,
         months <- 1 + windows_upper[index] - windows_lower[index]
 
         # get weighted mean rate
-        mort <- apply(survival_mat[, index, drop = FALSE],
-                      1,
-                      weighted.mean,
-                      w = months)
+        mort <- 1 - apply(survival_mat[, index, drop = FALSE],
+                          1,
+                          weighted.mean,
+                          w = months)
 
       }
 

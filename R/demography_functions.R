@@ -269,8 +269,23 @@ periodTabulate <- function (age_death,
     n <- length(age_death)
     indices <- parallel::splitIndices(n, n_cores)
 
-    # convert these into the actual cluster ids
-    cluster_groups <- lapply(indices, function(i, x) {x[i]}, clusters)
+    # get full dataset in one
+    data_all <- cbind(age_death,
+                      birth_int,
+                      cluster_id)
+
+    # split into chunks of the correct size
+    data_chunks <- lapply(indices,
+                          function(i, data, clusters) {
+                            # get cluster group
+                            cluster_group <- clusters[i]
+                            # find matching records
+                            idx <- which(data[, 3] %in% cluster_group)
+                            # return data subset
+                            data[idx, ]
+                          },
+                          data_all,
+                          clusters)
 
     # define function to act on groups of clusters
     parfun <- function (cluster_group,
@@ -279,11 +294,9 @@ periodTabulate <- function (age_death,
                         cluster_id,
                         ...) {
 
-      idx <- which(cluster_id %in% cluster_group)
-
-      periodTabulate(age_death = age_death[idx],
-                     birth_int = birth_int[idx],
-                     cluster_id = cluster_id[idx],
+      periodTabulate(age_death = data[, 1],
+                     birth_int = data[, 2],
+                     cluster_id = data[, 3],
                      ...)
 
     }
@@ -292,11 +305,8 @@ periodTabulate <- function (age_death,
     sfInit(parallel = TRUE, cpus = n_cores)
 
     # run chunks in parallel
-    ans_list <- sfLapply(cluster_groups,
+    ans_list <- sfLapply(data_chunks,
                          parfun,
-                         age_death,
-                         birth_int,
-                         cluster_id,
                          windows_lower = windows_lower,
                          windows_upper = windows_upper,
                          period = period,

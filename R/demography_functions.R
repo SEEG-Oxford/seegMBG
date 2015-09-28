@@ -291,9 +291,6 @@ periodTabulate <- function (age_death,
     # set up cluster
     sfInit(parallel = TRUE, cpus = n_cores)
 
-    # close it on finishing or error
-    on.exit(sfStop())
-
     # run chunks in parallel
     ans_list <- sfLapply(cluster_groups,
                          parfun,
@@ -311,6 +308,9 @@ periodTabulate <- function (age_death,
                          delay = delay,
                          verbose = verbose,
                          n_cores = 1)
+
+    # stop the cluster
+    sfStop()
 
     # recombine results into ans
     ans <- do.call(rbind, ans_list)

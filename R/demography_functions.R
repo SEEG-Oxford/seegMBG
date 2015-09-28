@@ -303,6 +303,8 @@ periodTabulate <- function (age_death,
     # set up cluster
     sfInit(parallel = TRUE, cpus = n_cores)
 
+    sfLibrary(seegMBG)
+
     # run chunks in parallel
     ans_list <- sfLapply(data_chunks,
                          parfun,

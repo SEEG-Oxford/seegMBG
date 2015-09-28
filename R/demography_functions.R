@@ -266,37 +266,34 @@ periodTabulate <- function (age_death,
     clusters <- unique(cluster_id)
 
     # split up data by finding indices for clusters
-    n <- length(age_death)
-    indices <- parallel::splitIndices(n, n_cores)
+    indices <- parallel::splitIndices(length(clusters),
+                                      n_cores)
 
     # get full dataset in one
-    data_all <- cbind(age_death,
+    data_all <- data.frame(age_death,
                       birth_int,
                       cluster_id)
 
     # split into chunks of the correct size
     data_chunks <- lapply(indices,
-                          function(i, data, clusters) {
+                          function(i, dat, clusters) {
                             # get cluster group
                             cluster_group <- clusters[i]
                             # find matching records
-                            idx <- which(data[, 3] %in% cluster_group)
+                            idx <- which(dat$cluster_id %in% cluster_group)
                             # return data subset
-                            data[idx, ]
+                            dat[idx, ]
                           },
                           data_all,
                           clusters)
 
     # define function to act on groups of clusters
-    parfun <- function (cluster_group,
-                        age_death,
-                        birth_int,
-                        cluster_id,
+    parfun <- function (dat,
                         ...) {
 
-      periodTabulate(age_death = data[, 1],
-                     birth_int = data[, 2],
-                     cluster_id = data[, 3],
+      periodTabulate(age_death = dat$age_death,
+                     birth_int = dat$birth_int,
+                     cluster_id = dat$cluster_id,
                      ...)
 
     }

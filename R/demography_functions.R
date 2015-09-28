@@ -356,7 +356,7 @@ periodTabulate <- function (age_death,
 
   # expand period and delay if needed
   periods <- rep(period, n)
-  delays <- rep(delays, n)
+  delays <- rep(delay, n)
 
   # check all argument are the right size
   stopifnot(length(period) == 1)

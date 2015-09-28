@@ -264,12 +264,12 @@ periodTabulate <- function (age_death,
 
     # get all of the unique clusters
     clusters <- unique(cluster_id)
-#
-#     # split up data by finding indices for clusters
-#     indices <- parallel::splitIndices(length(clusters),
-#                                       n_cores)
 
-    indices <- 1:length(clusters)
+    # split up data by finding indices for clusters
+    indices <- parallel::splitIndices(length(clusters),
+                                      n_cores)
+
+    # indices <- 1:length(clusters)
 
     # get full dataset in one
     data_all <- data.frame(age_death,

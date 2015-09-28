@@ -40,7 +40,7 @@ periodTabulate(age_death, birth_int, cluster_id, windows_lower = c(0, 1, 3, 6,
  which to estimate mortality rates}
 
 \item{period}{the length of time in months for which mortality rates
- should be estimated, either vector or scalar}
+ should be estimated - scalar}
 
 \item{method}{the method used to tabulate exposures and deaths, either by
  combining monthly exposures within the window (\code{method = 'monthly'})
@@ -77,7 +77,7 @@ periodTabulate(age_death, birth_int, cluster_id, windows_lower = c(0, 1, 3, 6,
 \item{delay}{the length of time in months prior to the interview date
  to end the period (I.e. the period runs from \code{period + delay} months
  before the interview date to \code{period} days before).
- Either vector scalar, or \code{NULL}, in which case the default delay for
+ Either scalar or \code{NULL}, in which case the default delay for
  \code{cohorts} is used: for \code{cohorts = 'one'} \code{delay = 0}; for
  \code{cohorts = 'three'}
  \code{delay = max(windows_upper - windows_lower)}.}

@@ -19,7 +19,7 @@
 #'  non-overlapping lower and upper ages in months of each survival window
 #'
 #' @param period the length of time in months for which mortality rates
-#'  should be estimated, either vector or scalar
+#'  should be estimated - scalar
 #'
 #' @param method the method used to tabulate exposures and deaths, either by
 #'  combining monthly exposures within the window (\code{method = 'monthly'})
@@ -56,7 +56,7 @@
 #' @param delay the length of time in months prior to the interview date
 #'  to end the period (I.e. the period runs from \code{period + delay} months
 #'  before the interview date to \code{period} days before).
-#'  Either vector scalar, or \code{NULL}, in which case the default delay for
+#'  Either scalar or \code{NULL}, in which case the default delay for
 #'  \code{cohorts} is used: for \code{cohorts = 'one'} \code{delay = 0}; for
 #'  \code{cohorts = 'three'}
 #'  \code{delay = max(windows_upper - windows_lower)}.

@@ -59,14 +59,12 @@ periodMortality <- function (age_death,
   na <- length(ages_lower)
 
   # expand period and delay if needed
-  if(length(period) == 1) period <- rep(period, n)
-  if(length(delay) == 1) delay <- rep(delay, n)
 
   # check all argument are the right size
+  stopifnot(length(period) == 1)
+  stopifnot(length(delay) == 1)
   stopifnot(length(birth_int) == n)
   stopifnot(length(cluster_id) == n)
-  stopifnot(length(period) == n)
-  stopifnot(length(delay) == n)
   stopifnot(length(windows_upper) == nw)
   stopifnot(length(ages_upper) == na)
 
@@ -357,14 +355,16 @@ periodTabulate <- function (age_death,
   ncl <- length(clusters)
 
   # expand period and delay if needed
-  if(length(period) == 1) period <- rep(period, n)
-  if(length(delay) == 1) delay <- rep(delay, n)
+  periods <- rep(period, n)
+  delays <- rep(delays, n)
 
   # check all argument are the right size
+  stopifnot(length(period) == 1)
+  stopifnot(length(delay) == 1)
+  stopifnot(length(periods) == n)
+  stopifnot(length(delays) == n)
   stopifnot(length(birth_int) == n)
   stopifnot(length(cluster_id) == n)
-  stopifnot(length(period) == n)
-  stopifnot(length(delay) == n)
   stopifnot(length(windows_upper) == nw)
 
   if (any(windows_upper[-1] <= windows_lower[-nw])) {
@@ -477,8 +477,8 @@ periodTabulate <- function (age_death,
       birth_int <- expand(birth_int, nw)
 
       # delay and period matrices
-      delay_mat <- expand(delay, nw)
-      period_mat <- expand(period, nw)
+      delay_mat <- expand(delays, nw)
+      period_mat <- expand(periods, nw)
 
       # get the extra delay matrix, for when multiple periods are needed
       extra_delay_mat <- period_mat * (p - 1)

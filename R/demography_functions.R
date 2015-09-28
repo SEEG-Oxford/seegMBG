@@ -262,18 +262,24 @@ periodTabulate <- function (age_death,
     stopifnot(length(birth_int) == length(age_death))
     stopifnot(length(cluster_id) == length(age_death))
 
-    # split up data
-    n <- length(age_death)
+    # get all of the unique clusters
+    clusters <- unique(cluster_id)
 
-    # split indices for cores
+    # split up data by finding indices for clusters
+    n <- length(age_death)
     indices <- parallel::splitIndices(n, n_cores)
 
-    # define function to act on indices
-    parfun <- function (idx,
+    # convert these into the actual cluster ids
+    cluster_groups <- lapply(indices, function(i, x) {x[i]}, clusters)
+
+    # define function to act on groups of clusters
+    parfun <- function (cluster_group,
                         age_death,
                         birth_int,
                         cluster_id,
                         ...) {
+
+      idx <- which(cluster_id %in% cluster_group)
 
       periodTabulate(age_death = age_death[idx],
                      birth_int = birth_int[idx],
@@ -289,7 +295,7 @@ periodTabulate <- function (age_death,
     on.exit(sfStop())
 
     # run chunks in parallel
-    ans_list <- sfLapply(indices,
+    ans_list <- sfLapply(cluster_group,
                          parfun,
                          age_death,
                          birth_int,
@@ -307,15 +313,8 @@ periodTabulate <- function (age_death,
                          n_cores = 1)
 
     # recombine results into ans
+    ans <- do.call(rbind, ans_list)
 
-    for (i in 1:nperiod) {
-      list <- lapply(ans_list, '[[', i)
-
-      ans_list[[1]][[i]] <- do.call(rbind, list)
-
-    }
-
-    ans <- ans_list[[1]]
     return (ans)
   }
 

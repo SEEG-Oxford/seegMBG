@@ -295,7 +295,7 @@ periodTabulate <- function (age_death,
     on.exit(sfStop())
 
     # run chunks in parallel
-    ans_list <- sfLapply(cluster_group,
+    ans_list <- sfLapply(cluster_groups,
                          parfun,
                          age_death,
                          birth_int,

@@ -301,8 +301,10 @@ getPoints <- function (shape,
   raster <- raster::crop(raster, shape)
   raster <- safeMask(raster, shape)
 
-  # set 0s to NA
-  raster[raster == 0] <- NA
+  if (prob) {
+    # set 0s to NA
+    raster[raster == 0] <- NA
+  }
 
   if (perpixel) {
     # get number of valid pixels

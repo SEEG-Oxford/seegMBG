@@ -264,9 +264,13 @@ safeMask <- function(raster, sp) {
 #'  representing the region for which integration points are required
 #' @param raster a \code{RasterLayer} object, optionally containing values
 #'  determining weights for integration
-#' @param n the number of integration points required
+#' @param n the number of integration points required. Rounded up if not an
+#'  integer.
+#' @param perpixel whether \code{n} gives the expected number of points per
+#'  valid (non-NA and non-zero) pixel, or else the total number of points
 #' @param prob whether to weight the integration points by the values of
-#'  \code{raster}
+#'  \code{raster}. Pixels with value 0 will never be sampled from and
+#'  negative pixels will cause an error.
 #'
 #' @import seegSDM
 #'
@@ -274,11 +278,14 @@ safeMask <- function(raster, sp) {
 #' @export
 #'
 #' @return a three-column matrix giving the coordinates and corresponding
-#'  weights for the spatial integration points over \code{sp}.
+#'  weights for the spatial integration points over \code{sp}. Note that
+#'  if there are fewer unique points found than \code{n}, only the unique
+#'  points will be returned
 #'
 getPoints <- function (shape,
                        raster,
                        n = 10,
+                       perpixel = FALSE,
                        prob = FALSE) {
 
   # if prob is FALSE, a shit-ton of points are sampled
@@ -293,6 +300,20 @@ getPoints <- function (shape,
   # resize it
   raster <- raster::crop(raster, shape)
   raster <- safeMask(raster, shape)
+
+  # set 0s to NA
+  raster[raster == 0] <- NA
+
+  if (perpixel) {
+    # get number of valid pixels
+    n_valid <- length(seegSDM:::notMissingIdx(raster))
+  } else {
+    # otherwise get one times this many
+    n_valid <- 1
+  }
+
+  # correct total number to integer
+  n <- ceiling(n * n_valid)
 
   # get representative points in an sp object by uniform random
   # sampling then kmeans clustering

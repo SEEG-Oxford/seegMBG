@@ -271,7 +271,7 @@ safeMask <- function(raster, sp) {
 #' @param prob whether to weight the integration points by the values of
 #'  \code{raster}. Pixels with value 0 will never be sampled from and
 #'  negative pixels will cause an error. If all cells are 0 or missing,
-#'  prob will be set to FALSE.
+#'  prob will be set to FALSE and a warning issued.
 #'
 #' @import seegSDM
 #'
@@ -319,6 +319,7 @@ getPoints <- function (shape,
   if (prob) {
 
     if (all(na.omit(vals) == 0)) {
+      warning('all cells in raster for this polygon were zero, switching to prob = FALSE')
       prob <- FALSE
     } else {
       # otherwise set them to NAs

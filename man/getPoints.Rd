@@ -22,7 +22,7 @@ valid (non-NA and non-zero) pixel, or else the total number of points}
 \item{prob}{whether to weight the integration points by the values of
  \code{raster}. Pixels with value 0 will never be sampled from and
  negative pixels will cause an error. If all cells are 0 or missing,
- prob will be set to FALSE.}
+ prob will be set to FALSE and a warning issued.}
 }
 \value{
 a three-column matrix giving the coordinates and corresponding

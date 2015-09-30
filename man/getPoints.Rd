@@ -29,7 +29,7 @@ a three-column matrix giving the coordinates and corresponding
  weights for the spatial integration points over \code{sp}. Note that
  if there are fewer unique points found than \code{n}, only the unique
  points will be returned. If there are no non-missing cells, a dataframe
- with 0 rows will be returned.
+ with 0 rows will be returned and a warning issued.
 }
 \description{
 Use random sampling and K-means clustering to generate

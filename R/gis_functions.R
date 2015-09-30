@@ -282,7 +282,7 @@ safeMask <- function(raster, sp) {
 #'  weights for the spatial integration points over \code{sp}. Note that
 #'  if there are fewer unique points found than \code{n}, only the unique
 #'  points will be returned. If there are no non-missing cells, a dataframe
-#'  with 0 rows will be returned.
+#'  with 0 rows will be returned and a warning issued.
 #'
 getPoints <- function (shape,
                        raster,
@@ -308,8 +308,9 @@ getPoints <- function (shape,
   vals <- getValues(raster)
 
   # if there are no valid cells, return no integration points
-  # dataframe with no rows
+  # as a dataframe with no rows & issue a warning
   if (all(is.na(vals))) {
+    warning ('no non-NA cells found in raster for this polygon, no integration points returned')
     ans <- data.frame(x = NA, y = NA, weights = NA)[0, ]
     return (ans)
   }

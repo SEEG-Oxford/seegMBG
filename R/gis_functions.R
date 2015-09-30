@@ -362,7 +362,7 @@ getPoints <- function (shape,
   u <- kmn$centers
 
   # get the weights (proportion of points falling in that area)
-  weights <- summary(factor(kmn$cluster)) / length(kmn$cluster)
+  weights <- table(kmn$cluster) / length(kmn$cluster)
 
   # remove any rownames from the inducing points
   rownames(u) <- NULL

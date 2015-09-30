@@ -4,7 +4,7 @@
 \alias{getPoints}
 \title{getPoints}
 \usage{
-getPoints(shape, raster, n = 10, prob = FALSE)
+getPoints(shape, raster, n = 10, perpixel = FALSE, prob = FALSE)
 }
 \arguments{
 \item{shape}{an \code{sp} object containing one or more polygons
@@ -13,14 +13,23 @@ representing the region for which integration points are required}
 \item{raster}{a \code{RasterLayer} object, optionally containing values
 determining weights for integration}
 
-\item{n}{the number of integration points required}
+\item{n}{the number of integration points required. Rounded up if not an
+integer.}
+
+\item{perpixel}{whether \code{n} gives the expected number of points per
+valid (non-NA and non-zero) pixel, or else the total number of points}
 
 \item{prob}{whether to weight the integration points by the values of
- \code{raster}}
+ \code{raster}. Pixels with value 0 will never be sampled from and
+ negative pixels will cause an error. If all cells are 0 or missing,
+ prob will be set to FALSE and a warning issued.}
 }
 \value{
 a three-column matrix giving the coordinates and corresponding
- weights for the spatial integration points over \code{sp}.
+ weights for the spatial integration points over \code{sp}. Note that
+ if there are fewer unique points found than \code{n}, only the unique
+ points will be returned. If there are no non-missing cells, a dataframe
+ with 0 rows will be returned and a warning issued.
 }
 \description{
 Use random sampling and K-means clustering to generate

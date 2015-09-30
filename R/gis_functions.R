@@ -264,9 +264,14 @@ safeMask <- function(raster, sp) {
 #'  representing the region for which integration points are required
 #' @param raster a \code{RasterLayer} object, optionally containing values
 #'  determining weights for integration
-#' @param n the number of integration points required
+#' @param n the number of integration points required. Rounded up if not an
+#'  integer.
+#' @param perpixel whether \code{n} gives the expected number of points per
+#'  valid (non-NA and non-zero) pixel, or else the total number of points
 #' @param prob whether to weight the integration points by the values of
-#'  \code{raster}
+#'  \code{raster}. Pixels with value 0 will never be sampled from and
+#'  negative pixels will cause an error. If all cells are 0 or missing,
+#'  prob will be set to FALSE and a warning issued.
 #'
 #' @import seegSDM
 #'
@@ -274,11 +279,15 @@ safeMask <- function(raster, sp) {
 #' @export
 #'
 #' @return a three-column matrix giving the coordinates and corresponding
-#'  weights for the spatial integration points over \code{sp}.
+#'  weights for the spatial integration points over \code{sp}. Note that
+#'  if there are fewer unique points found than \code{n}, only the unique
+#'  points will be returned. If there are no non-missing cells, a dataframe
+#'  with 0 rows will be returned and a warning issued.
 #'
 getPoints <- function (shape,
                        raster,
                        n = 10,
+                       perpixel = FALSE,
                        prob = FALSE) {
 
   # if prob is FALSE, a shit-ton of points are sampled
@@ -293,6 +302,41 @@ getPoints <- function (shape,
   # resize it
   raster <- raster::crop(raster, shape)
   raster <- safeMask(raster, shape)
+
+
+  # get cell values to check them
+  vals <- getValues(raster)
+
+  # if there are no valid cells, return no integration points
+  # as a dataframe with no rows & issue a warning
+  if (all(is.na(vals))) {
+    warning ('no non-NA cells found in raster for this polygon, no integration points returned')
+    ans <- data.frame(x = NA, y = NA, weights = NA)[0, ]
+    return (ans)
+  }
+
+  # if prob = TRUE and all valid cells are 0, set prob to FALSE
+  if (prob) {
+
+    if (all(na.omit(vals) == 0)) {
+      warning('all cells in raster for this polygon were zero, switching to prob = FALSE')
+      prob <- FALSE
+    } else {
+      # otherwise set them to NAs
+      raster[raster == 0] <- NA
+    }
+  }
+
+  if (perpixel) {
+    # get number of valid pixels
+    n_valid <- length(seegSDM:::notMissingIdx(raster))
+  } else {
+    # otherwise get one times this many
+    n_valid <- 1
+  }
+
+  # correct total number to integer
+  n <- ceiling(n * n_valid)
 
   # get representative points in an sp object by uniform random
   # sampling then kmeans clustering
@@ -318,7 +362,7 @@ getPoints <- function (shape,
   u <- kmn$centers
 
   # get the weights (proportion of points falling in that area)
-  weights <- summary(factor(kmn$cluster)) / length(kmn$cluster)
+  weights <- table(kmn$cluster) / length(kmn$cluster)
 
   # remove any rownames from the inducing points
   rownames(u) <- NULL

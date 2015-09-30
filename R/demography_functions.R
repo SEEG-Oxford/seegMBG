@@ -41,7 +41,11 @@ periodMortality <- function (age_death,
                              delay = max(windows_upper - windows_lower),
                              glm = FALSE,
                              verbose = TRUE,
+                             n_cores = 1,
                              ...) {
+
+  # check the number of cores is valid
+
 
   # throw a warning is monthly rates are wanted, but monthly mortalities
   # not used to calculate them
@@ -55,14 +59,12 @@ periodMortality <- function (age_death,
   na <- length(ages_lower)
 
   # expand period and delay if needed
-  if(length(period) == 1) period <- rep(period, n)
-  if(length(delay) == 1) delay <- rep(delay, n)
 
   # check all argument are the right size
+  stopifnot(length(period) == 1)
+  stopifnot(length(delay) == 1)
   stopifnot(length(birth_int) == n)
   stopifnot(length(cluster_id) == n)
-  stopifnot(length(period) == n)
-  stopifnot(length(delay) == n)
   stopifnot(length(windows_upper) == nw)
   stopifnot(length(ages_upper) == na)
 
@@ -85,9 +87,10 @@ periodMortality <- function (age_death,
                            cohorts = cohorts,
                            inclusion = inclusion,
                            mortality = mortality,
-                           nperiod = 1,
+                           nperiod = nperiod,
                            delay = delay,
-                           verbose = verbose)
+                           verbose = verbose,
+                           n_cores = n_cores)
 
 
   # loop through periods
@@ -101,6 +104,12 @@ periodMortality <- function (age_death,
 
     # fit the required model
     if (glm) {
+
+      if (n_cores == 1) {
+        inla_threads <- NULL
+      } else {
+        inla_threads <- n_cores
+      }
 
       # round up the deaths and exposures
       df$exposed <- ceiling(df$exposed)
@@ -121,6 +130,7 @@ periodMortality <- function (age_death,
                 family = 'binomial',
                 Ntrials = df$exposed,
                 control.predictor = list(compute = TRUE),
+                num.threads = inla_threads,
                 ...)
 
       # get fitted mortality probabilities
@@ -176,10 +186,10 @@ periodMortality <- function (age_death,
         months <- 1 + windows_upper[index] - windows_lower[index]
 
         # get weighted mean rate
-        mort <- apply(survival_mat[, index, drop = FALSE],
-                      1,
-                      weighted.mean,
-                      w = months)
+        mort <- 1 - apply(survival_mat[, index, drop = FALSE],
+                          1,
+                          weighted.mean,
+                          w = months)
 
       }
 
@@ -237,7 +247,85 @@ periodTabulate <- function (age_death,
                             mortality = c('bin', 'monthly'),
                             nperiod = 1,
                             delay = NULL,
-                            verbose = TRUE) {
+                            verbose = TRUE,
+                            n_cores = 1) {
+
+  # parallelism by recursion
+  if (n_cores > 1) {
+
+    # let the user know
+    message(sprintf('running periodTabulate on %s cores', n_cores))
+
+    # check data sizes
+    stopifnot(length(birth_int) == length(age_death))
+    stopifnot(length(cluster_id) == length(age_death))
+
+    # get all of the unique clusters
+    clusters <- unique(cluster_id)
+
+    # split up data by finding indices for clusters
+    indices <- parallel::splitIndices(length(clusters),
+                                      n_cores)
+
+    # indices <- 1:length(clusters)
+
+    # get full dataset in one
+    data_all <- data.frame(age_death,
+                      birth_int,
+                      cluster_id)
+
+    # split into chunks of the correct size
+    data_chunks <- lapply(indices,
+                          function(i, dat, clusters) {
+                            # get cluster group
+                            cluster_group <- clusters[i]
+                            # find matching records
+                            idx <- which(dat$cluster_id %in% cluster_group)
+                            # return data subset
+                            dat[idx, ]
+                          },
+                          data_all,
+                          clusters)
+
+    # define function to act on groups of clusters
+    parfun <- function (dat,
+                        ...) {
+
+      periodTabulate(age_death = dat$age_death,
+                     birth_int = dat$birth_int,
+                     cluster_id = dat$cluster_id,
+                     ...)
+
+    }
+
+    # turn of cluster on exit or error
+    on.exit(sfStop())
+
+    # set up cluster
+    sfInit(parallel = TRUE, cpus = n_cores)
+
+    sfLibrary(seegMBG)
+
+    # run chunks in parallel
+    ans_list <- sfLapply(data_chunks,
+                         parfun,
+                         windows_lower = windows_lower,
+                         windows_upper = windows_upper,
+                         period = period,
+                         method = method,
+                         cohorts = cohorts,
+                         inclusion = inclusion,
+                         mortality = mortality,
+                         nperiod = nperiod,
+                         delay = delay,
+                         verbose = verbose,
+                         n_cores = 1)
+
+    # recombine results into ans
+    ans <- do.call(rbind, ans_list)
+
+    return (ans)
+  }
 
   # get the tabulation method
   method <- match.arg(method)
@@ -267,14 +355,16 @@ periodTabulate <- function (age_death,
   ncl <- length(clusters)
 
   # expand period and delay if needed
-  if(length(period) == 1) period <- rep(period, n)
-  if(length(delay) == 1) delay <- rep(delay, n)
+  periods <- rep(period, n)
+  delays <- rep(delay, n)
 
   # check all argument are the right size
+  stopifnot(length(period) == 1)
+  stopifnot(length(delay) == 1)
+  stopifnot(length(periods) == n)
+  stopifnot(length(delays) == n)
   stopifnot(length(birth_int) == n)
   stopifnot(length(cluster_id) == n)
-  stopifnot(length(period) == n)
-  stopifnot(length(delay) == n)
   stopifnot(length(windows_upper) == nw)
 
   if (any(windows_upper[-1] <= windows_lower[-nw])) {
@@ -387,8 +477,8 @@ periodTabulate <- function (age_death,
       birth_int <- expand(birth_int, nw)
 
       # delay and period matrices
-      delay_mat <- expand(delay, nw)
-      period_mat <- expand(period, nw)
+      delay_mat <- expand(delays, nw)
+      period_mat <- expand(periods, nw)
 
       # get the extra delay matrix, for when multiple periods are needed
       extra_delay_mat <- period_mat * (p - 1)

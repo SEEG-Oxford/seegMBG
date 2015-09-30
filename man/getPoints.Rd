@@ -21,13 +21,15 @@ valid (non-NA and non-zero) pixel, or else the total number of points}
 
 \item{prob}{whether to weight the integration points by the values of
  \code{raster}. Pixels with value 0 will never be sampled from and
- negative pixels will cause an error.}
+ negative pixels will cause an error. If all cells are 0 or missing,
+ prob will be set to FALSE.}
 }
 \value{
 a three-column matrix giving the coordinates and corresponding
  weights for the spatial integration points over \code{sp}. Note that
  if there are fewer unique points found than \code{n}, only the unique
- points will be returned
+ points will be returned. If there are no non-missing cells, a dataframe
+ with 0 rows will be returned.
 }
 \description{
 Use random sampling and K-means clustering to generate

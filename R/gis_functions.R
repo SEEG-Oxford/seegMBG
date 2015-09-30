@@ -270,7 +270,8 @@ safeMask <- function(raster, sp) {
 #'  valid (non-NA and non-zero) pixel, or else the total number of points
 #' @param prob whether to weight the integration points by the values of
 #'  \code{raster}. Pixels with value 0 will never be sampled from and
-#'  negative pixels will cause an error.
+#'  negative pixels will cause an error. If all cells are 0 or missing,
+#'  prob will be set to FALSE.
 #'
 #' @import seegSDM
 #'
@@ -280,7 +281,8 @@ safeMask <- function(raster, sp) {
 #' @return a three-column matrix giving the coordinates and corresponding
 #'  weights for the spatial integration points over \code{sp}. Note that
 #'  if there are fewer unique points found than \code{n}, only the unique
-#'  points will be returned
+#'  points will be returned. If there are no non-missing cells, a dataframe
+#'  with 0 rows will be returned.
 #'
 getPoints <- function (shape,
                        raster,
@@ -301,9 +303,26 @@ getPoints <- function (shape,
   raster <- raster::crop(raster, shape)
   raster <- safeMask(raster, shape)
 
+
+  # get cell values to check them
+  vals <- getValues(raster)
+
+  # if there are no valid cells, return no integration points
+  # dataframe with no rows
+  if (all(is.na(vals))) {
+    ans <- data.frame(x = NA, y = NA, weights = NA)[0, ]
+    return (ans)
+  }
+
+  # if prob = TRUE and all valid cells are 0, set prob to FALSE
   if (prob) {
-    # set 0s to NA
-    raster[raster == 0] <- NA
+
+    if (all(na.omit(vals) == 0)) {
+      prob <- FALSE
+    } else {
+      # otherwise set them to NAs
+      raster[raster == 0] <- NA
+    }
   }
 
   if (perpixel) {

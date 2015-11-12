@@ -377,3 +377,103 @@ getPoints <- function (shape,
   return (u)
 
 }
+
+#' @title condSim
+#' @rdname condSim
+#'
+#' @title Conditional Simulation
+#' @description Carry out conditional simulation on a matrix of pixel-level
+#' prevalence draws to calculate overall or regional estimates of total case
+#' numbers
+#'
+#' @param prev a matrix of pixel-level prevalence samples where each row
+#'  corresponds to a different pixels and each column to a different posterior
+#'  sample
+#' @param pop a vector of population sizes in each cell, corresponding to the
+#'  rows of \code{prev}
+#' @param group an optional vector (of the same size as \code{pop}) identifying
+#'  (e.g. an admin unit) to which each pixel belongs. If specified, samples of
+#'  case counts are calculated for each unique value of \code{group}. If
+#'  \code{group = NULL}, samples are returned as the total over all pixels.
+#'
+#' @family GIS
+#' @export
+#'
+#' @return If \code{group = NULL}, a vector of size equal to the number of
+#'  columns in prev, each element giving a different simulated number of cases
+#'  across all pixels covered by \code{prev}.
+#'  If \code{group} is specified, a matrix of simulated case counts with each
+#'   row corresponding to a different unique value in \code{group} (e.g. an
+#'    administrative unit) and each column corresponding to a different draw.
+#'
+#' @examples
+#' # make some fake data
+#' n_pixels <- 100
+#' n_draws <- 10
+#' prevalence <- matrix(runif(n_pixels * n_draws),
+#'                      ncol = n_draws)
+#' population <- rpois(n_pixels, 100)
+#'
+#' # run overall simulation
+#' draws <- condSim(prevalence, population)
+#'
+#' # simulate by (made up) country
+#' country <- sample(letters[1:5], n_pixels, replace = TRUE)
+#' draws <- condSim(prevalence, population, country)
+#'
+condSim <- function (prev, pop, group = NULL) {
+  # given a matrix of pixel-level prevalence samples `prev`
+  # where each rows are pixels and columns are draws, a vector
+  # of corresponding pixel populations `pop`, and an optional pixel
+  # grouping factor `group`, return draws for the total deaths in each
+  # group, or overall if groups are not specified
+
+  # get dimensions of prev
+  ncell <- nrow(prev)
+  ndraw <- ncol(prev)
+
+  # check dimensions of pop and group
+  if (length(pop) != ncell) {
+    stop (sprintf('number of elements in pop (%i) not equal to number of cells in prev (%i)',
+                  length(pop),
+                  ncell))
+  }
+
+  if (is.null(group)) {
+    group <- rep(1, length(pop))
+  } else {
+    if (length(group) != ncell) {
+      stop (sprintf('number of elements in group (%i) not equal to number of cells in prev (%i)',
+                    length(group),
+                    ncell))
+    }
+  }
+
+  # otherwise, get the levels in group and create a matrix of results
+  levels <- unique(na.omit(group))
+  nlevel <- length(levels)
+
+  ans <- matrix(NA,
+                ncol = ndraw,
+                nrow = nlevel)
+  rownames(ans) <- levels
+
+  # loop through levels in group, getting the results
+  for (lvl in nlevel) {
+
+    # get an index o pixels in the level
+    idx <- which(group == levels[lvl])
+
+    # get draws and add to results
+    ans[lvl, ] <- pop[idx] %*% prev[idx, ]
+
+  }
+
+  # if only one level, make this a vector
+  if (nlevel == 1) ans <- as.vector(ans)
+
+  # return result
+  return (ans)
+
+}
+

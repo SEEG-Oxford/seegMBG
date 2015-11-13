@@ -459,7 +459,7 @@ condSim <- function (prev, pop, group = NULL) {
   rownames(ans) <- levels
 
   # loop through levels in group, getting the results
-  for (lvl in nlevel) {
+  for (lvl in 1:nlevel) {
 
     # get an index o pixels in the level
     idx <- which(group == levels[lvl])

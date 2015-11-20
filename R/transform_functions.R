@@ -166,7 +166,8 @@ gamTrans <- function(coords,
                       paste0(cov_names, collapse = ') + s('),
                       ')'))
 
-  f <- response ~ 1 + cov_terms
+  f <- response ~ 1
+  f <- f + cov_terms
 
   # if required, add conditional terms
   if (cond) {
@@ -210,9 +211,9 @@ gamTrans <- function(coords,
 
   # fit the model
   if (bam) {
-    m <- mgcv::bam(f, data = data, family = family)#, ...)
+    m <- mgcv::bam(f, data = data, family = family, ...)
   } else {
-    m <- mgcv::gam(f, data = data, family = family)#, ...)
+    m <- mgcv::gam(f, data = data, family = family, ...)
   }
 
   # ~~~~~~~~~~
@@ -232,7 +233,7 @@ gamTrans <- function(coords,
     vals <- data.frame(vals)
 
     # add on the extra data
-    vals <- cbind(vals, extra_data[rep(1, nrow(vals)), ])
+    vals <- cbind(vals, extra_data[rep(1, nrow(vals)), , drop = FALSE])
 
     # optionally add on dummy data for the condition intercept and variables
     if (cond) {
@@ -251,8 +252,13 @@ gamTrans <- function(coords,
                           newdata = vals,
                           type = 'terms')
 
+    # find any condition terms
+    cond_terms_idx <- grep('):condition$', colnames(vals_trans))
+
     # remove the condition ones and the condition index
-    vals_trans <- vals_trans[, -grep('):condition$', colnames(vals_trans))]
+    if (length(cond_terms_idx) > 0) {
+      vals_trans <- vals_trans[, -cond_terms_idx]
+    }
     vals_trans <- vals_trans[, !(colnames(vals_trans) %in% c('condition', 'condition_intercept'))]
 
     # format the names

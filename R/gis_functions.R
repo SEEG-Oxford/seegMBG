@@ -383,31 +383,34 @@ getPoints <- function (shape,
 #'
 #' @title Conditional Simulation
 #' @description Carry out conditional simulation on a matrix of pixel-level
-#' prevalence draws to calculate overall or regional estimates of total case
-#' numbers
+#'   value simulations to calculate overall or regional estimates of metrics,
+#'   such total case numbers, prevalences or inequality metrics
 #'
-#' @param prev a matrix of pixel-level prevalence samples where each row
-#'  corresponds to a different pixels and each column to a different posterior
-#'  sample
-#' @param pop a vector of population sizes in each cell, corresponding to the
-#'  rows of \code{prev}
-#' @param group an optional vector (of the same size as \code{pop}) identifying
-#'  (e.g. an admin unit) to which each pixel belongs. If specified, samples of
-#'  case counts are calculated for each unique value of \code{group}. If
-#'  \code{group = NULL}, samples are returned as the total over all pixels.
+#' @param vals a matrix of samples of pixel-level vales where each row
+#'   corresponds to a different pixels and each column to a different posterior
+#'   sample
+#' @param weights an optional vector of weights in each cell, corresponding to
+#'   the rows of \code{vals}.
+#' @param group an optional vector (of the same size as \code{weights})
+#'   identifying the group (e.g. an admin unit) to which each pixel belongs. If
+#'   specified, samples of case counts are calculated for each unique value of
+#'   \code{group}. If \code{group = NULL}, samples are returned as the total
+#'   over all pixels.
+#' @param fun to apply to summarise the (weighted) elements of \code{vals},
+#'   within each group, for each sample.
 #'
 #' @family GIS
 #' @export
 #'
 #' @return If \code{group = NULL}, a vector of size equal to the number of
-#'  columns in prev, each element giving a different simulated number of cases
-#'  across all pixels covered by \code{prev}.
-#'  If \code{group} is specified, a matrix of simulated case counts with each
+#'  columns in \code{vals}, each element giving a different simulated summary
+#'  across all pixels covered by \code{vals}.
+#'  If \code{group} is specified, a matrix of simulated summaries with each
 #'   row corresponding to a different unique value in \code{group} (e.g. an
 #'    administrative unit) and each column corresponding to a different draw.
 #'
 #' @examples
-#' # make some fake data
+#' # make some fake prevalence map data
 #' n_pixels <- 100
 #' n_draws <- 10
 #' prevalence <- matrix(runif(n_pixels * n_draws),
@@ -417,33 +420,40 @@ getPoints <- function (shape,
 #' # run overall simulation
 #' draws <- condSim(prevalence, population)
 #'
-#' # simulate by (made up) country
+#' # simulate by (made up) country to get the expected number of infections
 #' country <- sample(letters[1:5], n_pixels, replace = TRUE)
 #' draws <- condSim(prevalence, population, country)
 #'
-condSim <- function (prev, pop, group = NULL) {
+condSim <- function (vals, weights = NULL, group = NULL, fun = sum) {
   # given a matrix of pixel-level prevalence samples `prev`
   # where each rows are pixels and columns are draws, a vector
   # of corresponding pixel populations `pop`, and an optional pixel
   # grouping factor `group`, return draws for the total deaths in each
   # group, or overall if groups are not specified
 
-  # get dimensions of prev
-  ncell <- nrow(prev)
-  ndraw <- ncol(prev)
+  # get dimensions of vals
+  ncell <- nrow(vals)
+  ndraw <- ncol(vals)
 
-  # check dimensions of pop and group
-  if (length(pop) != ncell) {
-    stop (sprintf('number of elements in pop (%i) not equal to number of cells in prev (%i)',
-                  length(pop),
-                  ncell))
+  # capture function as a string
+  fun_string <- deparse(substitute(fun))
+
+  # check dimensions of weights and group, set to 1 if not specified
+  if (is.null(weights)) {
+    weights <- rep(1, ncell)
+  } else {
+    if (length(weights) != ncell) {
+      stop (sprintf('number of elements in weights (%i) not equal to number of cells in vals (%i)',
+                    length(weights),
+                    ncell))
+    }
   }
 
   if (is.null(group)) {
-    group <- rep(1, length(pop))
+    group <- rep(1, length(weights))
   } else {
     if (length(group) != ncell) {
-      stop (sprintf('number of elements in group (%i) not equal to number of cells in prev (%i)',
+      stop (sprintf('number of elements in group (%i) not equal to number of cells in vals (%i)',
                     length(group),
                     ncell))
     }
@@ -464,8 +474,21 @@ condSim <- function (prev, pop, group = NULL) {
     # get an index o pixels in the level
     idx <- which(group == levels[lvl])
 
-    # get draws and add to results
-    ans[lvl, ] <- pop[idx] %*% prev[idx, ]
+    # if the user wants the sum, speed things up by doing matrix multiplication
+    if (fun_string == 'sum') {
+
+      # get draws and add to results
+      ans[lvl, ] <- weights[idx] %*% vals[idx, ]
+
+    } else {
+
+      # otherwise, apply weights
+      weighted_vals <- sweep(vals[idx, ], 1, weights[idx], '*')
+
+      # and then summarise
+      ans[lvl, ] <- apply(weighted_vals, 2, fun)
+
+    }
 
   }
 

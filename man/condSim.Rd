@@ -4,36 +4,40 @@
 \alias{condSim}
 \title{condSim}
 \usage{
-condSim(prev, pop, group = NULL)
+condSim(vals, weights = NULL, group = NULL, fun = sum)
 }
 \arguments{
-\item{prev}{a matrix of pixel-level prevalence samples where each row
+\item{vals}{a matrix of samples of pixel-level vales where each row
 corresponds to a different pixels and each column to a different posterior
 sample}
 
-\item{pop}{a vector of population sizes in each cell, corresponding to the
-rows of \code{prev}}
+\item{weights}{an optional vector of weights in each cell, corresponding to
+the rows of \code{vals}.}
 
-\item{group}{an optional vector (of the same size as \code{pop}) identifying
-(e.g. an admin unit) to which each pixel belongs. If specified, samples of
-case counts are calculated for each unique value of \code{group}. If
-\code{group = NULL}, samples are returned as the total over all pixels.}
+\item{group}{an optional vector (of the same size as \code{weights})
+identifying the group (e.g. an admin unit) to which each pixel belongs. If
+specified, samples of case counts are calculated for each unique value of
+\code{group}. If \code{group = NULL}, samples are returned as the total
+over all pixels.}
+
+\item{fun}{to apply to summarise the (weighted) elements of \code{vals},
+within each group, for each sample.}
 }
 \value{
 If \code{group = NULL}, a vector of size equal to the number of
- columns in prev, each element giving a different simulated number of cases
- across all pixels covered by \code{prev}.
- If \code{group} is specified, a matrix of simulated case counts with each
+ columns in \code{vals}, each element giving a different simulated summary
+ across all pixels covered by \code{vals}.
+ If \code{group} is specified, a matrix of simulated summaries with each
   row corresponding to a different unique value in \code{group} (e.g. an
    administrative unit) and each column corresponding to a different draw.
 }
 \description{
 Carry out conditional simulation on a matrix of pixel-level
-prevalence draws to calculate overall or regional estimates of total case
-numbers
+  value simulations to calculate overall or regional estimates of metrics,
+  such total case numbers, prevalences or inequality metrics
 }
 \examples{
-# make some fake data
+# make some fake prevalence map data
 n_pixels <- 100
 n_draws <- 10
 prevalence <- matrix(runif(n_pixels * n_draws),
@@ -43,7 +47,7 @@ population <- rpois(n_pixels, 100)
 # run overall simulation
 draws <- condSim(prevalence, population)
 
-# simulate by (made up) country
+# simulate by (made up) country to get the expected number of infections
 country <- sample(letters[1:5], n_pixels, replace = TRUE)
 draws <- condSim(prevalence, population, country)
 

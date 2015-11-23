@@ -26,6 +26,9 @@ notifications:
 env:
   matrix:
     - RVERSION=oldrel
+      R_CHECK_ARGS="--no-manual"
     - RVERSION=release
+      R_CHECK_ARGS="--no-manual"
     - RVERSION=devel
+      R_CHECK_ARGS="--no-manual"
 

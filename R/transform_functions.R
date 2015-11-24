@@ -341,7 +341,7 @@ gamTrans <- function(coords,
 
   } else {
     # if not poredicting, set these to NULL
-    trans_cond <- trans_cond_ras <- NULL
+    trans_ras <- trans_cond_ras <- NULL
 
   }
 

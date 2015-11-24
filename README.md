@@ -1,3 +1,6 @@
+[![Build Status](https://travis-ci.org/SEEG-Oxford/seegMBG.svg)](https://travis-ci.org/SEEG-Oxford/seegMBG)
+![CRAN](http://www.r-pkg.org/badges/version/seegMBG)
+
 # seegMBG
 ## Streamlined Model-based Geostatistics Functions for the SEEG Research Group
 

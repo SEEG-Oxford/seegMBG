@@ -4,10 +4,10 @@
 \alias{condSim}
 \title{condSim}
 \usage{
-condSim(vals, weights = NULL, group = NULL, fun = sum)
+condSim(vals, weights = NULL, group = NULL, fun = NULL, ...)
 }
 \arguments{
-\item{vals}{a matrix of samples of pixel-level vales where each row
+\item{vals}{a matrix of samples of pixel-level values where each row
 corresponds to a different pixels and each column to a different posterior
 sample}
 
@@ -20,8 +20,17 @@ specified, samples of case counts are calculated for each unique value of
 \code{group}. If \code{group = NULL}, samples are returned as the total
 over all pixels.}
 
-\item{fun}{to apply to summarise the (weighted) elements of \code{vals},
-within each group, for each sample.}
+\item{fun}{function to summarise the (weighted) elements of \code{vals},
+within each group, for each sample. This function must accept a vector of
+elements of \code{vals} as its first argument, and a vector of weights
+(of the same length) via an argument named \code{weights}.
+The default, \code{fun = NULL}, efficiently calculates a weighted sum
+across groups using a dot product. This does not modify the weights,
+so, for example, passing prevalence estimates as \code{vals} and pixel
+populations as \code{weights} returns the expected number of cases for
+each element of \code{group} for each draw.}
+
+\item{\dots}{other arguments to be passed to \code{fun}.}
 }
 \value{
 If \code{group = NULL}, a vector of size equal to the number of

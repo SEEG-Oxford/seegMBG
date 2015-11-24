@@ -386,7 +386,7 @@ getPoints <- function (shape,
 #'   value simulations to calculate overall or regional estimates of metrics,
 #'   such total case numbers, prevalences or inequality metrics
 #'
-#' @param vals a matrix of samples of pixel-level vales where each row
+#' @param vals a matrix of samples of pixel-level values where each row
 #'   corresponds to a different pixels and each column to a different posterior
 #'   sample
 #' @param weights an optional vector of weights in each cell, corresponding to
@@ -396,8 +396,16 @@ getPoints <- function (shape,
 #'   specified, samples of case counts are calculated for each unique value of
 #'   \code{group}. If \code{group = NULL}, samples are returned as the total
 #'   over all pixels.
-#' @param fun to apply to summarise the (weighted) elements of \code{vals},
-#'   within each group, for each sample.
+#' @param fun function to summarise the (weighted) elements of \code{vals},
+#'   within each group, for each sample. This function must accept a vector of
+#'   elements of \code{vals} as its first argument, and a vector of weights
+#'   (of the same length) via an argument named \code{weights}.
+#'   The default, \code{fun = NULL}, efficiently calculates a weighted sum
+#'   across groups using a dot product. This does not modify the weights,
+#'   so, for example, passing prevalence estimates as \code{vals} and pixel
+#'   populations as \code{weights} returns the expected number of cases for
+#'   each element of \code{group} for each draw.
+#' @param \dots other arguments to be passed to \code{fun}.
 #'
 #' @family GIS
 #' @export
@@ -424,7 +432,7 @@ getPoints <- function (shape,
 #' country <- sample(letters[1:5], n_pixels, replace = TRUE)
 #' draws <- condSim(prevalence, population, country)
 #'
-condSim <- function (vals, weights = NULL, group = NULL, fun = sum) {
+condSim <- function (vals, weights = NULL, group = NULL, fun = NULL, ...) {
   # given a matrix of pixel-level prevalence samples `prev`
   # where each rows are pixels and columns are draws, a vector
   # of corresponding pixel populations `pop`, and an optional pixel
@@ -437,6 +445,8 @@ condSim <- function (vals, weights = NULL, group = NULL, fun = sum) {
 
   # capture function as a string
   fun_string <- deparse(substitute(fun))
+
+  # check fun accepts a
 
   # check dimensions of weights and group, set to 1 if not specified
   if (is.null(weights)) {
@@ -474,19 +484,16 @@ condSim <- function (vals, weights = NULL, group = NULL, fun = sum) {
     # get an index o pixels in the level
     idx <- which(group == levels[lvl])
 
-    # if the user wants the sum, speed things up by doing matrix multiplication
-    if (fun_string == 'sum') {
+    # by default, calculate a weighted sum
+    if (is.null(fun)) {
 
       # get draws and add to results
       ans[lvl, ] <- weights[idx] %*% vals[idx, ]
 
     } else {
 
-      # otherwise, apply weights
-      weighted_vals <- sweep(vals[idx, ], 1, weights[idx], '*')
-
-      # and then summarise
-      ans[lvl, ] <- apply(weighted_vals, 2, fun)
+      # otherwise, apply function to each column
+      ans[lvl, ] <- apply(vals[idx, ], 2, fun, weights = weights[idx], ...)
 
     }
 

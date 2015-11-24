@@ -102,6 +102,11 @@ pcaTrans <- function(coords, covs) {
 #' @param bam whether to fit the model using \code{mgcv::bam} (the default),
 #'  otherwise \code{mgcv::gam} is used instead
 #'
+#' @param bs a two letter character string indicating the (penalized) smoothing
+#'   basis to use. (eg "tp" for thin plate regression spline, "cr" for cubic
+#'   regression spline). See \code{\link[mgcv]{smooth.terms}} for an over view
+#'   of what is available.
+#'
 #' @param predict whether to transform the rasters after fitting the model.
 #'  If set to \code{FALSE} this can enable model tweaking before the final
 #'  transformations are applied, without the computaitonal cost of prediction
@@ -135,6 +140,7 @@ gamTrans <- function(coords,
                      extra_terms = NULL,
                      extra_data = NULL,
                      bam = TRUE,
+                     bs = 'tp',
                      predict = TRUE,
                      ...) {
 
@@ -162,18 +168,23 @@ gamTrans <- function(coords,
   # ~~~~~~~~~~~~~
   # build formula
 
-  cov_terms <- reformulate(paste0('s(',
-                      paste0(cov_names, collapse = ') + s('),
-                      ')'))
+  cov_terms_string <- paste(sprintf('s(%s, bs = "%s")',
+                                    cov_names,
+                                    bs),
+                            collapse = ' + ')
+
+  cov_terms <- reformulate(cov_terms_string)
 
   f <- response ~ 1
   f <- f + cov_terms
 
   # if required, add conditional terms
   if (cond) {
-    cond_terms <- reformulate(paste0('s(',
-                         paste0(cond_names, collapse = ', by = condition) + s('),
-                         ', by = condition)'))
+    cov_terms_string <- paste(sprintf('s(%s, bs = "%s", by = condition)',
+                                      cond_names,
+                                      bs),
+                              collapse = ' + ')
+
     f <- f + cond_terms + ~ condition_intercept
   }
 

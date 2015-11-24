@@ -6,7 +6,7 @@
 \usage{
 gamTrans(coords, response, covs, family = gaussian, condition = NULL,
   condition_covs = NULL, extra_terms = NULL, extra_data = NULL,
-  bam = TRUE, predict = TRUE, ...)
+  bam = TRUE, bs = "tp", predict = TRUE, ...)
 }
 \arguments{
 \item{coords}{a two-column matrix of coordinates of records}
@@ -41,6 +41,11 @@ the spatial covariates.}
 
 \item{bam}{whether to fit the model using \code{mgcv::bam} (the default),
 otherwise \code{mgcv::gam} is used instead}
+
+\item{bs}{a two letter character string indicating the (penalized) smoothing
+basis to use. (eg "tp" for thin plate regression spline, "cr" for cubic
+regression spline). See \code{\link[mgcv]{smooth.terms}} for an over view
+of what is available.}
 
 \item{predict}{whether to transform the rasters after fitting the model.
 If set to \code{FALSE} this can enable model tweaking before the final

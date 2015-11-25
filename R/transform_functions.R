@@ -354,11 +354,20 @@ gamTrans <- function(coords,
 
 }
 
+
+addQuotes <- function (x) {
+  # If x is a character string, add (escaped) quotation marks
+  if (is.character(x)) {
+    x <- sprintf('\"%s\"', x)
+  }
+  return (x)
+}
+
 parseArgsS <- function(l) {
   # parse a list of additional arguments to smoothers in gamTrans
   stopifnot(is.list(l))
   l_string <- paste(names(l),
-                    l,
+                    lapply(l, addQuotes),
                     sep = ' = ',
                     collapse = ', ')
   return (l_string)

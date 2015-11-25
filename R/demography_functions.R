@@ -347,6 +347,11 @@ periodTabulate <- function (age_death,
                             verbose = TRUE,
                             n_cores = 1) {
 
+  # if period_end isn't given, create a fake interview_dates vector,
+  # just to avoid awkward parallelism
+  if (is.null(period_end))
+    interview_dates <- rep(NA, length(age_death))
+
   # parallelism by recursion
   if (n_cores > 1) {
 
@@ -367,7 +372,8 @@ periodTabulate <- function (age_death,
     # get full dataset in one
     data_all <- data.frame(age_death,
                       birth_int,
-                      cluster_id)
+                      cluster_id,
+                      interview_dates)
 
     # split into chunks of the correct size
     data_chunks <- lapply(indices,
@@ -389,11 +395,12 @@ periodTabulate <- function (age_death,
       periodTabulate(age_death = dat$age_death,
                      birth_int = dat$birth_int,
                      cluster_id = dat$cluster_id,
+                     interview_dates = dat$interview_dates,
                      ...)
 
     }
 
-    # turn of cluster on exit or error
+    # turn off cluster on exit or error
     on.exit(sfStop())
 
     # set up cluster
@@ -410,7 +417,6 @@ periodTabulate <- function (age_death,
                          nperiod = nperiod,
                          period = period,
                          period_end = period_end,
-                         interview_dates = interview_dates,
                          method = method,
                          cohorts = cohorts,
                          inclusion = inclusion,

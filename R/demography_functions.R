@@ -25,6 +25,99 @@
 #' @export
 #' @import INLA
 #'
+#' @examples
+#'
+#' # set seed for reproducibility
+#' set.seed(1)
+#'
+#' # make fake mortality data
+#' n <- 1000
+#' birth_int <- rpois(n, 100)
+#' age_death <- rpois(n, exp(rnorm(n, 2)))
+#' cluster_id <- sample(1:5, n, replace = TRUE)
+#'
+#' # if any children died after the interview, their age at death chouls be
+#' # recorded as being higher than the upper window max
+#' age_death[age_death > birth_int] <- 6000
+#'
+#' # run with default settings
+#' ans <- periodTabulate(age_death,
+#'                      birth_int,
+#'                      cluster_id)
+#'
+#' head(ans)
+#'
+#' # use four age bins
+#' ans <- periodTabulate(age_death,
+#'                       birth_int,
+#'                       cluster_id,
+#'                       windows_lower = c(0, 1, 12, 36),
+#'                       windows_upper = c(0, 11, 35, 59))
+#'
+#' head(ans)
+#'
+#' # DHS method for four age bins
+#' ans <- periodTabulate(age_death,
+#'                       birth_int,
+#'                       cluster_id,
+#'                       windows_lower = c(0, 1, 12, 36),
+#'                       windows_upper = c(0, 11, 35, 59),
+#'                       method = 'direct',
+#'                       cohorts = 'three',
+#'                       inclusion = 'both')
+#'
+#' head(ans)
+#'
+#' # IHME method for four age bins
+#' ans <- periodTabulate(age_death,
+#'                       birth_int,
+#'                       cluster_id,
+#'                       windows_lower = c(0, 1, 12, 36),
+#'                       windows_upper = c(0, 11, 35, 59),
+#'                       method = 'monthly',
+#'                       cohorts = 'one',
+#'                       inclusion = 'enter')
+#'
+#' head(ans)
+#'
+#' # IHME method for four age bins, tabulating monthly exposures
+#' ans <- periodTabulate(age_death,
+#'                       birth_int,
+#'                       cluster_id,
+#'                       windows_lower = c(0, 1, 12, 36),
+#'                       windows_upper = c(0, 11, 35, 59),
+#'                       method = 'monthly',
+#'                       cohorts = 'one',
+#'                       inclusion = 'enter',
+#'                       mortality = 'monthly')
+#'
+#' head(ans)
+#'
+#' # calculate mortality rates over fixed periods
+#'
+#' # assign an interview date to each cluster
+#' (int_date_cluster <- Sys.Date() - rpois(5, exp(rnorm(5, 6))))
+#' int_date <- int_date_cluster[cluster_id]
+#'
+#' # & define the final month of the final estimation period
+#' # E.g. for 3x 5-year bins starting in 2000, the final period would end in
+#' # December 2014
+#'
+#' ans <- periodTabulate(age_death,
+#'                       birth_int,
+#'                       cluster_id,
+#'                       windows_lower = c(0, 1, 12, 36),
+#'                       windows_upper = c(0, 11, 35, 59),
+#'                       method = 'monthly',
+#'                       cohorts = 'one',
+#'                       nperiod = 3,
+#'                       period = 60,
+#'                       period_end = as.Date('2014-12-01'),
+#'                       interview_dates = int_date,
+#'                       inclusion = 'enter',
+#'                       mortality = 'monthly')
+
+
 periodMortality <- function (age_death,
                              birth_int,
                              cluster_id,
@@ -32,20 +125,19 @@ periodMortality <- function (age_death,
                              windows_upper = c(0, 2, 5, 11, 23, 35, 47, 59),
                              ages_lower = c(0, 0),
                              ages_upper = c(12, 60),
+                             nperiod = 1,
                              period = 60,
+                             period_end = NULL,
+                             interview_dates = NULL,
                              method = c('monthly', 'direct'),
                              cohorts = c('one', 'three'),
                              inclusion = c('enter', 'exit', 'both', 'either'),
                              mortality = c('bin', 'monthly'),
-                             nperiod = 1,
-                             delay = max(windows_upper - windows_lower),
+                             delay = NULL,
                              glm = FALSE,
                              verbose = TRUE,
                              n_cores = 1,
                              ...) {
-
-  # check the number of cores is valid
-
 
   # throw a warning is monthly rates are wanted, but monthly mortalities
   # not used to calculate them
@@ -62,7 +154,8 @@ periodMortality <- function (age_death,
 
   # check all argument are the right size
   stopifnot(length(period) == 1)
-  stopifnot(length(delay) == 1)
+  stopifnot(is.null(delay) || length(delay) == 1)
+  stopifnot(is.null(interview_dates) || length(interview_dates) == n)
   stopifnot(length(birth_int) == n)
   stopifnot(length(cluster_id) == n)
   stopifnot(length(windows_upper) == nw)
@@ -82,12 +175,14 @@ periodMortality <- function (age_death,
                            cluster_id = cluster_id,
                            windows_lower = windows_lower,
                            windows_upper = windows_upper,
+                           nperiod = nperiod,
                            period = period,
+                           period_end = period_end,
+                           interview_dates = interview_dates,
                            method = method,
                            cohorts = cohorts,
                            inclusion = inclusion,
                            mortality = mortality,
-                           nperiod = nperiod,
                            delay = delay,
                            verbose = verbose,
                            n_cores = n_cores)
@@ -240,12 +335,14 @@ periodTabulate <- function (age_death,
                             cluster_id,
                             windows_lower = c(0, 1, 3, 6, 12, 24, 36, 48),
                             windows_upper = c(0, 2, 5, 11, 23, 35, 47, 59),
+                            nperiod = 1,
                             period = 60,
+                            period_end = NULL,
+                            interview_dates = NULL,
                             method = c('monthly', 'direct'),
                             cohorts = c('one', 'three'),
                             inclusion = c('enter', 'exit', 'both', 'either'),
                             mortality = c('bin', 'monthly'),
-                            nperiod = 1,
                             delay = NULL,
                             verbose = TRUE,
                             n_cores = 1) {
@@ -266,8 +363,6 @@ periodTabulate <- function (age_death,
     # split up data by finding indices for clusters
     indices <- parallel::splitIndices(length(clusters),
                                       n_cores)
-
-    # indices <- 1:length(clusters)
 
     # get full dataset in one
     data_all <- data.frame(age_death,
@@ -312,12 +407,14 @@ periodTabulate <- function (age_death,
                          parfun,
                          windows_lower = windows_lower,
                          windows_upper = windows_upper,
+                         nperiod = nperiod,
                          period = period,
+                         period_end = period_end,
+                         interview_dates = interview_dates,
                          method = method,
                          cohorts = cohorts,
                          inclusion = inclusion,
                          mortality = mortality,
-                         nperiod = nperiod,
                          delay = delay,
                          verbose = verbose,
                          n_cores = 1)
@@ -339,6 +436,16 @@ periodTabulate <- function (age_death,
     delay <- switch(cohorts,
                     one = 0,
                     three = max(windows_upper - windows_lower))
+  }
+
+  # check period_end if it is specified
+  if (!is.null(period_end)) {
+    if (is.null(interview_dates)) {
+      stop('if period_end is being used, interview_dates must also be specified')
+    }
+    if (length(period_end) != 1 | class(period_end) != 'Date') {
+      stop('period_end must be a Date object of length one')
+    }
   }
 
   # match up the cohorts
@@ -409,12 +516,14 @@ periodTabulate <- function (age_death,
                                   cluster_id = cluster_id,
                                   windows_lower = new_windows[-n_nw],
                                   windows_upper = new_windows[-1],
+                                  nperiod = 1,
                                   period = period,
+                                  period_end = period_end,
+                                  interview_dates = interview_dates,
                                   method = "direct",
                                   cohorts = cohorts,
                                   inclusion = inclusion,
                                   mortality = mortality,
-                                  nperiod = 1,
                                   delay = delay + period * (p - 1),
                                   verbose = verbose)
 
@@ -463,6 +572,17 @@ periodTabulate <- function (age_death,
       }
 
     } else if (method == 'direct') {
+
+
+      # if periods are defined by dates, overwrite the delays
+      if (!is.null(period_end)) {
+        # get cmc versions of interview dates and period end date
+        period_end <- Date2cmc(period_end)
+        interview_date <- Date2cmc(interview_dates)
+        # get (possibly negative) time from period end to interview date
+        delays <- interview_date - period_end
+      }
+
 
       # get matrices
 

@@ -3,3 +3,4 @@
 ^\.git
 seegMBG\.Rproj
 ^man-roxygen
+^.travis.yml$

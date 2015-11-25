@@ -194,6 +194,13 @@ gamTrans <- function(coords,
   if (!is.null(extra_terms))
     f <- f + extra_terms
 
+  # assign any objects in the arguments of l into this environment
+  # so they can be accessed by gam/bam
+  if (length(s_args) > 0) {
+    for (i in 1:length(s_args))
+      assign(names(s_args)[i], s_args[[i]])
+  }
+
   # ~~~~~~~~~~~~~
   # get training data
 

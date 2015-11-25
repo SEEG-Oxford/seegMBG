@@ -3,11 +3,14 @@
 \name{Date2cmc}
 \alias{Date2cmc}
 \alias{cmc2Date}
+\alias{cmc2year}
 \title{convert between Date and cmc formats}
 \usage{
 Date2cmc(Date)
 
 cmc2Date(cmc, day = 1)
+
+cmc2year(cmc)
 }
 \arguments{
 \item{Date}{an object of class \code{Date} to convert to century-month-code

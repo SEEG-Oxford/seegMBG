@@ -440,8 +440,8 @@ periodTabulate <- function (age_death,
 
   # check period_end if it is specified
   if (!is.null(period_end)) {
-    if (is.null(interview_dates)) {
-      stop('if period_end is being used, interview_dates must also be specified')
+    if (is.null(interview_dates) || (class(interview_dates) != 'Date')) {
+      stop('if period_end is being used, interview_dates must also be specified, as a vector of class Date')
     }
     if (length(period_end) != 1 | class(period_end) != 'Date') {
       stop('period_end must be a Date object of length one')
@@ -736,3 +736,16 @@ cmc2Date <- function(cmc, day = 1) {
   Date <- as.Date(date_string)
   return (Date)
 }
+
+#' @name cmc2year
+#' @rdname Date2cmc
+#'
+#' @export
+#'
+cmc2year <- function(cmc) {
+  Date <- cmc2Date(cmc)
+  year <- format(Date, '%Y')
+  return (year)
+}
+
+

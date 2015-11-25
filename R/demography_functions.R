@@ -574,3 +574,45 @@ periodTabulate <- function (age_death,
   return (ans)
 
 }
+
+#' @name Date2cmc
+#' @rdname Date2cmc
+#'
+#' @title convert between Date and cmc formats
+#'
+#' @description Utility functions to convert between R's \code{Date} class and
+#'   century-month-code (cmc) format, which measures time as month integers
+#'
+#' @param Date an object of class \code{Date} to convert to century-month-code
+#'  format.
+#'
+#' @return an object of class \code{numeric} (for \code{Date2cmc}) of of class
+#'  \code{Date} (for \code{cmc2Date}).
+#'
+#' @export
+#'
+Date2cmc <- function(Date) {
+  Date <- as.POSIXlt(as.Date(Date, origin = "1900-01-01"))
+  cmc <- Date$year * 12 + Date$mon + 1
+  return (cmc)
+}
+
+#' @name cmc2Date
+#' @rdname Date2cmc
+#'
+#' @param cmc an object of class \code{numeric} representing a month in
+#'  century-month-code to convert to a \code{Date}
+#'
+#' @param day the day of the month to assign when creating the date
+#'
+#' @export
+#'
+cmc2Date <- function(cmc, day = 1) {
+  cmc[cmc <= 0] <- NA
+  year <- 1900 + trunc((cmc - 1) / 12)
+  month <- cmc - (year - 1900) * 12
+  date_string <- sprintf('%i-%i-%i', year, month, day)
+  date_string[is.na(cmc)] <- NA
+  Date <- as.Date(date_string)
+  return (Date)
+}

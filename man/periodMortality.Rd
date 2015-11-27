@@ -53,9 +53,9 @@ used if \code{interview_dates} is also specified. For example, if three
 5-year periods are to be tabulated, ranging from 2000-2015 this date should
 between 2015-12-01 and 2015-12-31. If \code{period_end = NULL} (the
 default), periods will instead be defined by the \code{period},
-\code{nperiod} and \code{delay} arguments. Note that \code{delay} will
-be set to 0 if \code{period_end} is specified, even if
-\code{cohorts = 'three'}.}
+\code{nperiod} and \code{delay} arguments. Note that if \code{delay} is
+specified, this *will* be used as well, pushing back all periods be the
+specified amount.}
 
 \item{interview_dates}{an optional vector of \code{Date}s of the same length
 as \code{age_death} giving the interview date corresponding to each record,

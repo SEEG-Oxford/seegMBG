@@ -582,13 +582,14 @@ periodTabulate <- function (age_death,
 
       # if periods are defined by dates, overwrite the delays
       if (!is.null(period_end)) {
+
         # get cmc versions of interview dates and period end date
         period_end <- Date2cmc(period_end)
         interview_date <- Date2cmc(interview_dates)
-        # get (possibly negative) time from period end to interview date
-        delays <- interview_date - period_end
-      }
 
+        # add the (possibly negative) time from period end to interview date
+        delays <- delays + interview_date - period_end
+      }
 
       # get matrices
 

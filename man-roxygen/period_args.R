@@ -6,7 +6,7 @@
 #'
 #' @param age_death numeric vector giving the age of death in months of each
 #'  child. Note that if the child is still alive at the time of interview,
-#'  corresponding eleents of \code{age_death} should be given a number greater
+#'  corresponding elements of \code{age_death} should be given a number greater
 #'  than \code{max(windows_upper)}
 #'
 #' @param birth_int numeric vector giving the time in month between the
@@ -18,8 +18,27 @@
 #' @param windows_lower,windows_upper numeric vectors giving the
 #'  non-overlapping lower and upper ages in months of each survival window
 #'
+#' @param nperiod the number of consecutive periods to calculate for. I.e.
+#'  if \code{period = 12} and \code{nperiod = 3}, numbers will be returned for
+#'  periods 0-12, 13-24 and 25-36 months prior to the interview (plus delay).
+#'
 #' @param period the length of time in months for which mortality rates
 #'  should be estimated - scalar
+#'
+#' @param period_end an optional \code{Date}s specifying the end month for the
+#'   final period for which to tabulate mortality. \code{period_end} can only be
+#'   used if \code{interview_dates} is also specified. For example, if three
+#'   5-year periods are to be tabulated, ranging from 2000-2015 this date should
+#'   between 2015-12-01 and 2015-12-31. If \code{period_end = NULL} (the
+#'   default), periods will instead be defined by the \code{period},
+#'   \code{nperiod} and \code{delay} arguments. Note that if \code{delay} is
+#'   specified, this *will* be used as well, pushing back all periods be the
+#'   specified amount.
+#'
+#' @param interview_dates an optional vector of \code{Date}s of the same length
+#'  as \code{age_death} giving the interview date corresponding to each record,
+#'  to be used in conjunction with \code{period_end}. If
+#'  \code{period_end = NULL}, this argument is ignored.
 #'
 #' @param method the method used to tabulate exposures and deaths, either by
 #'  combining monthly exposures within the window (\code{method = 'monthly'})
@@ -49,13 +68,9 @@
 #'  \code{mortality = 'monthly'}). The latter option is only possible if
 #'  \code{method = 'monthly'}, an error will be thrown if this isn't the case.
 #'
-#' @param nperiod the number of consecutive periods to calculate for. I.e.
-#'  if \code{period = 12} and \code{nperiod = 3}, numbers will be returned for
-#'  periods 0-12, 13-24 and 25-36 months prior to the interview (plus delay).
-#'
 #' @param delay the length of time in months prior to the interview date
-#'  to end the period (I.e. the period runs from \code{period + delay} months
-#'  before the interview date to \code{period} days before).
+#'  to end the (last) period (I.e. the period runs from \code{period + delay} months
+#'  before the interview date to \code{delay} days before).
 #'  Either scalar or \code{NULL}, in which case the default delay for
 #'  \code{cohorts} is used: for \code{cohorts = 'one'} \code{delay = 0}; for
 #'  \code{cohorts = 'three'}

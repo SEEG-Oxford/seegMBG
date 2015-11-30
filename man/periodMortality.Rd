@@ -7,23 +7,24 @@
 \usage{
 periodMortality(age_death, birth_int, cluster_id, windows_lower = c(0, 1, 3,
   6, 12, 24, 36, 48), windows_upper = c(0, 2, 5, 11, 23, 35, 47, 59),
-  ages_lower = c(0, 0), ages_upper = c(12, 60), period = 60,
+  ages_lower = c(0, 0), ages_upper = c(12, 60), nperiod = 1,
+  period = 60, period_end = NULL, interview_dates = NULL,
   method = c("monthly", "direct"), cohorts = c("one", "three"),
   inclusion = c("enter", "exit", "both", "either"), mortality = c("bin",
-  "monthly"), nperiod = 1, delay = max(windows_upper - windows_lower),
-  glm = FALSE, verbose = TRUE, n_cores = 1, ...)
+  "monthly"), delay = NULL, glm = FALSE, verbose = TRUE, n_cores = 1,
+  ...)
 
 periodTabulate(age_death, birth_int, cluster_id, windows_lower = c(0, 1, 3, 6,
   12, 24, 36, 48), windows_upper = c(0, 2, 5, 11, 23, 35, 47, 59),
-  period = 60, method = c("monthly", "direct"), cohorts = c("one",
-  "three"), inclusion = c("enter", "exit", "both", "either"),
-  mortality = c("bin", "monthly"), nperiod = 1, delay = NULL,
-  verbose = TRUE, n_cores = 1)
+  nperiod = 1, period = 60, period_end = NULL, interview_dates = NULL,
+  method = c("monthly", "direct"), cohorts = c("one", "three"),
+  inclusion = c("enter", "exit", "both", "either"), mortality = c("bin",
+  "monthly"), delay = NULL, verbose = TRUE, n_cores = 1)
 }
 \arguments{
 \item{age_death}{numeric vector giving the age of death in months of each
 child. Note that if the child is still alive at the time of interview,
-corresponding eleents of \code{age_death} should be given a number greater
+corresponding elements of \code{age_death} should be given a number greater
 than \code{max(windows_upper)}}
 
 \item{birth_int}{numeric vector giving the time in month between the
@@ -39,8 +40,27 @@ non-overlapping lower and upper ages in months of each survival window}
 non-overlapping lower and upper ages in months of the age windows for
 which to estimate mortality rates}
 
+\item{nperiod}{the number of consecutive periods to calculate for. I.e.
+if \code{period = 12} and \code{nperiod = 3}, numbers will be returned for
+periods 0-12, 13-24 and 25-36 months prior to the interview (plus delay).}
+
 \item{period}{the length of time in months for which mortality rates
 should be estimated - scalar}
+
+\item{period_end}{an optional \code{Date}s specifying the end month for the
+final period for which to tabulate mortality. \code{period_end} can only be
+used if \code{interview_dates} is also specified. For example, if three
+5-year periods are to be tabulated, ranging from 2000-2015 this date should
+between 2015-12-01 and 2015-12-31. If \code{period_end = NULL} (the
+default), periods will instead be defined by the \code{period},
+\code{nperiod} and \code{delay} arguments. Note that if \code{delay} is
+specified, this *will* be used as well, pushing back all periods be the
+specified amount.}
+
+\item{interview_dates}{an optional vector of \code{Date}s of the same length
+as \code{age_death} giving the interview date corresponding to each record,
+to be used in conjunction with \code{period_end}. If
+\code{period_end = NULL}, this argument is ignored.}
 
 \item{method}{the method used to tabulate exposures and deaths, either by
 combining monthly exposures within the window (\code{method = 'monthly'})
@@ -70,13 +90,9 @@ or to return \emph{monthly} mortality in that age bin (if
 \code{mortality = 'monthly'}). The latter option is only possible if
 \code{method = 'monthly'}, an error will be thrown if this isn't the case.}
 
-\item{nperiod}{the number of consecutive periods to calculate for. I.e.
-if \code{period = 12} and \code{nperiod = 3}, numbers will be returned for
-periods 0-12, 13-24 and 25-36 months prior to the interview (plus delay).}
-
 \item{delay}{the length of time in months prior to the interview date
-to end the period (I.e. the period runs from \code{period + delay} months
-before the interview date to \code{period} days before).
+to end the (last) period (I.e. the period runs from \code{period + delay} months
+before the interview date to \code{delay} days before).
 Either scalar or \code{NULL}, in which case the default delay for
 \code{cohorts} is used: for \code{cohorts = 'one'} \code{delay = 0}; for
 \code{cohorts = 'three'}
@@ -131,5 +147,97 @@ These functions enable reconstruction of the DHS three-cohort method,
  Note that mixing and matching these argument in other ways will likely not
  lead to sane mortality rate estiamtes, since indivivduals could be recorded
  multiple times.
+}
+\examples{
+
+# set seed for reproducibility
+set.seed(1)
+
+# make fake mortality data
+n <- 1000
+birth_int <- rpois(n, 100)
+age_death <- rpois(n, exp(rnorm(n, 2)))
+cluster_id <- sample(1:5, n, replace = TRUE)
+
+# if any children died after the interview, their age at death chouls be
+# recorded as being higher than the upper window max
+age_death[age_death > birth_int] <- 6000
+
+# run with default settings
+ans <- periodTabulate(age_death,
+                     birth_int,
+                     cluster_id)
+
+head(ans)
+
+# use four age bins
+ans <- periodTabulate(age_death,
+                      birth_int,
+                      cluster_id,
+                      windows_lower = c(0, 1, 12, 36),
+                      windows_upper = c(0, 11, 35, 59))
+
+head(ans)
+
+# DHS method for four age bins
+ans <- periodTabulate(age_death,
+                      birth_int,
+                      cluster_id,
+                      windows_lower = c(0, 1, 12, 36),
+                      windows_upper = c(0, 11, 35, 59),
+                      method = 'direct',
+                      cohorts = 'three',
+                      inclusion = 'both')
+
+head(ans)
+
+# IHME method for four age bins
+ans <- periodTabulate(age_death,
+                      birth_int,
+                      cluster_id,
+                      windows_lower = c(0, 1, 12, 36),
+                      windows_upper = c(0, 11, 35, 59),
+                      method = 'monthly',
+                      cohorts = 'one',
+                      inclusion = 'enter')
+
+head(ans)
+
+# IHME method for four age bins, tabulating monthly exposures
+ans <- periodTabulate(age_death,
+                      birth_int,
+                      cluster_id,
+                      windows_lower = c(0, 1, 12, 36),
+                      windows_upper = c(0, 11, 35, 59),
+                      method = 'monthly',
+                      cohorts = 'one',
+                      inclusion = 'enter',
+                      mortality = 'monthly')
+
+head(ans)
+
+# calculate mortality rates over fixed periods
+
+# assign an interview date to each cluster
+(int_date_cluster <- Sys.Date() - rpois(5, exp(rnorm(5, 6))))
+int_date <- int_date_cluster[cluster_id]
+
+# & define the final month of the final estimation period
+# E.g. for 3x 5-year bins starting in 2000, the final period would end in
+# December 2014
+
+ans <- periodTabulate(age_death,
+                      birth_int,
+                      cluster_id,
+                      windows_lower = c(0, 1, 12, 36),
+                      windows_upper = c(0, 11, 35, 59),
+                      method = 'monthly',
+                      cohorts = 'one',
+                      nperiod = 3,
+                      period = 60,
+                      period_end = as.Date('2014-12-01'),
+                      interview_dates = int_date,
+                      inclusion = 'enter',
+                      mortality = 'monthly')
 }
 

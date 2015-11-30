@@ -102,9 +102,14 @@ pcaTrans <- function(coords, covs) {
 #' @param bam whether to fit the model using \code{mgcv::bam} (the default),
 #'  otherwise \code{mgcv::gam} is used instead
 #'
+#' @param s_args a named list of additional arguments to pass to the smoother on
+#'   each covariate. For example, this may include the smoother type (\code{bs})
+#'   or the basis dimension (\code{k}). See \code{\link[mgcv]{s}} for the list
+#'   of available arguments.
+#'
 #' @param predict whether to transform the rasters after fitting the model.
 #'  If set to \code{FALSE} this can enable model tweaking before the final
-#'  transformations are applied, without the computaitonal cost of prediction
+#'  transformations are applied, without the computational cost of prediction
 #'
 #' @param \dots other arguments to be passed to \code{mgcv::bam} or
 #'  \code{mgcv::gam}
@@ -135,6 +140,7 @@ gamTrans <- function(coords,
                      extra_terms = NULL,
                      extra_data = NULL,
                      bam = TRUE,
+                     s_args = list(),
                      predict = TRUE,
                      ...) {
 
@@ -162,24 +168,38 @@ gamTrans <- function(coords,
   # ~~~~~~~~~~~~~
   # build formula
 
-  cov_terms <- reformulate(paste0('s(',
-                      paste0(cov_names, collapse = ') + s('),
-                      ')'))
+  cov_terms_string <- paste(sprintf('s(%s, %s)',
+                                    cov_names,
+                                    parseArgsS(s_args)),
+                            collapse = ' + ')
+
+  cov_terms <- reformulate(cov_terms_string)
 
   f <- response ~ 1
   f <- f + cov_terms
 
   # if required, add conditional terms
   if (cond) {
-    cond_terms <- reformulate(paste0('s(',
-                         paste0(cond_names, collapse = ', by = condition) + s('),
-                         ', by = condition)'))
+    cond_terms_string <- paste(sprintf('s(%s, %s, by = condition)',
+                                      cond_names,
+                                      parseArgsS(s_args)),
+                              collapse = ' + ')
+
+    cond_terms <- reformulate(cond_terms_string)
+
     f <- f + cond_terms + ~ condition_intercept
   }
 
   # if required, add extra terms
   if (!is.null(extra_terms))
     f <- f + extra_terms
+
+  # assign any objects in the arguments of l into this environment
+  # so they can be accessed by gam/bam
+  if (length(s_args) > 0) {
+    for (i in 1:length(s_args))
+      assign(names(s_args)[i], s_args[[i]])
+  }
 
   # ~~~~~~~~~~~~~
   # get training data
@@ -330,7 +350,7 @@ gamTrans <- function(coords,
 
   } else {
     # if not poredicting, set these to NULL
-    trans_cond <- trans_cond_ras <- NULL
+    trans_ras <- trans_cond_ras <- NULL
 
   }
 
@@ -340,3 +360,23 @@ gamTrans <- function(coords,
                trans_cond = trans_cond_ras))
 
 }
+
+
+addQuotes <- function (x) {
+  # If x is a character string, add (escaped) quotation marks
+  if (is.character(x)) {
+    x <- sprintf('\"%s\"', x)
+  }
+  return (x)
+}
+
+parseArgsS <- function(l) {
+  # parse a list of additional arguments to smoothers in gamTrans
+  stopifnot(is.list(l))
+  l_string <- paste(names(l),
+                    lapply(l, addQuotes),
+                    sep = ' = ',
+                    collapse = ', ')
+  return (l_string)
+}
+

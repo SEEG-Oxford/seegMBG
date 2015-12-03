@@ -507,3 +507,101 @@ condSim <- function (vals, weights = NULL, group = NULL, fun = NULL, ...) {
 
 }
 
+#' @name makeVoronoiPolygons
+#' @rdname makeVoronoiPolygons
+#'
+#' @title Make Voronoi polygons from an INLA mesh and boundary
+#'
+#' @description Create Voronoi polygons based on an \code{inla.mesh} object 
+#' and an \code{inla.mesh.segment} object specifying the boundary (edge) of the Voronoi polygons.
+#'
+#' @param mesh an \code{inla.mesh} object.
+#'
+#' @param boundary an \code{inla.mesh.segment} object used to specify the Voronoi polygons boundary.
+#'
+#' @return An object of \code{SpatialPolygons} class. 
+#'
+#' @family GIS
+#'
+#' @export
+#' @importFrom deldir deldir
+#' @import sp
+#' @importFrom rgeos gIntersection
+#' @importFrom deldir tile.list
+#' 
+#' @examples 
+#' # load packages
+#' library(sp)
+#' library(INLA)
+#' 
+#' # make a SpatialPolygons object
+#' poly <- SpatialPolygons(list(
+#' Polygons(list(Polygon(matrix(c(76, 35, 90, 34, 60, 20, 50, 31), ncol=2, byrow=TRUE))), ID=1)))
+#'
+#' # make mesh
+#' mesh <- inla.mesh.2d(
+#'   boundary = inla.sp2segment(poly),
+#'   max.edge = c(3,5))
+#'
+#' # make voronoi polygons
+#' v <- makeVoronoiPolygons(mesh, poly)
+
+makeVoronoiPolygons <- function (mesh, boundary) {
+  
+  # takes INLA mesh and boundary (SpatialPolygonsDataFrame)
+  # returns voronoi polygons within the study boundary 
+  
+  # get the Voronoi triangulation for the mesh nodes (i.e. the coordinate of each node in the mesh)
+  dd <- deldir(mesh$loc[,1], mesh$loc[,2])
+  
+  # get the polygons around each mesh node
+  tiles <- tile.list(dd)
+  
+  # ~~~~~~
+  # convert into SpatialPolygons
+  
+  # turn each tile into a polygon
+  tile2poly <- function(tile) { 
+    Polygon(cbind(tile$x, tile$y),
+            hole = FALSE)
+  }
+  
+  # check if any coordinates touch the extent
+  outerPoly <- function(p, extent, prec = 1e-2) {
+    extent <- as.vector(extent)
+    xmin_diff <- min(abs(p@coords[, 1] - extent[1]))
+    xmax_diff <- min(abs(p@coords[, 1] - extent[2]))
+    ymin_diff <- min(abs(p@coords[, 2] - extent[3]))
+    ymax_diff <- min(abs(p@coords[, 2] - extent[4]))
+    any(xmin_diff < prec |
+          xmax_diff < prec |
+          ymin_diff < prec |
+          ymax_diff < prec)
+  }
+  
+  # get all voronoi polygons
+  poly <- lapply(tiles, tile2poly)
+  
+  # extent of the whole thing
+  ext <- extent(do.call(rbind, lapply(poly, function(x) x@coords)))
+  
+  # find those touching the edges and remove them
+  outers <- sapply(poly, outerPoly, ext)
+  poly <- poly[which(!outers)]
+  
+  # make an SP object, giving each polygon an ID
+  polys <- list()
+  for(i in 1:length(poly))
+    polys[[i]] <- Polygons(list(poly[[i]]), i)
+  
+  sp <- SpatialPolygons(polys,
+                        proj4string = CRS(projection(boundary)))
+  
+  # find polygons within boundary
+  voronoi <- gIntersection(sp, boundary, byid = TRUE)
+  
+  # return voronoi polygons
+  return(voronoi)
+  
+}
+

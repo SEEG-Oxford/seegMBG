@@ -633,11 +633,13 @@ makeVoronoiPolygons <- function (mesh, boundary) {
 #' @export
 #' @import sp
 #' @import raster
+#' @import seegSDM
 #' 
 #' @examples 
 #' # load packages
 #' library(sp)
 #' library(raster)
+#' library(seegSDM)
 #' 
 #' # make voronoi polygons
 #' example(makeVoronoiPolygons)
@@ -665,15 +667,13 @@ makeVoronoiPolygons <- function (mesh, boundary) {
 #' fun = c('mean', 'mean', 'modal')
 #' 
 #' # sort data
-#' dat <- sortPolyData(polygons = v, data = )
-#'
-
+#' dat <- sortPolyData(polygons = v, data = occ, covariates=covariates, fun=fun)
 
 
 sortPolyData <- function (polygons, 
                           data, 
                           covariates, 
-                          fun = rep('mean', nlayers(covs))) {
+                          fun = rep('mean', nlayers(covariates))) {
   
   # takes polygons (SpatialPolygons object)
   # occurrence dataset (dataframe containing at least columns longitude and latitude)
@@ -695,7 +695,7 @@ sortPolyData <- function (polygons,
   # check whether arguments are in the correct format
   if (class(data) != 'data.frame') {stop('data must be a dataframe')}
   if (class(polygons) != 'SpatialPolygons') {stop('polygons must be a SpatialPolygons object')}
-  if (class(covariates) != 'RasterStack'){stop('covariates must be a Raster object')}
+  if (!(class(covariates) %in% c('RasterLayer', 'RasterBrick', 'RasterStack'))){stop('covariates must be a Raster object')}
   if (length(fun) != nlayers(covariates)) {stop('number of covariate layers must equal the length of fun')}
   
   # strip elements in functions vector so they are recognised by fun argument in mapply
@@ -717,10 +717,10 @@ sortPolyData <- function (polygons,
   
   # calculate number of points within each voronoi polygon
   
-  # make matrix of point coordinates to pass to rasterPointCount function
+  # make matrix of point coordinates 
   point_matrix <- as.matrix(data[, c('Longitude', 'Latitude')])
   
-  ras <- rasterize(point_matrix, covs, FUN=count, background = 0)
+  ras <- rasterize(point_matrix, covariates, fun='count', background = 0)
   count <- extract(ras, polygons, fun = sum, na.rm = TRUE)
   
   # add number of points to result dataframe

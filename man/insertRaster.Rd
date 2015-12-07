@@ -30,6 +30,7 @@ Given a template raster, new set of values for non-missing
 \seealso{
 Other GIS: \code{\link{bufferMask}}, \code{\link{condSim}},
   \code{\link{getArea}}, \code{\link{getPoints}},
-  \code{\link{ll2cart}}, \code{\link{safeMask}}
+  \code{\link{ll2cart}}, \code{\link{makeVoronoiPolygons}},
+  \code{\link{safeMask}}, \code{\link{sortPolyData}}
 }
 

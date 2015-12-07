@@ -536,7 +536,7 @@ condSim <- function (vals, weights = NULL, group = NULL, fun = NULL, ...) {
 #' 
 #' # make a SpatialPolygons object
 #' poly <- SpatialPolygons(list(
-#' Polygons(list(Polygon(matrix(c(76, 35, 90, 34, 60, 20, 50, 31), ncol=2, byrow=TRUE))), ID=1)))
+#' Polygons(list(Polygon(matrix(c(0, 11, -10, 10, -10, -5, 0, -5), ncol=2, byrow=TRUE))), ID=1)))
 #'
 #' # make mesh
 #' mesh <- inla.mesh.2d(
@@ -605,3 +605,137 @@ makeVoronoiPolygons <- function (mesh, boundary) {
   
 }
 
+#' @name sortPolyData
+#' @rdname sortPolyData
+#'
+#' @title Organise polygon count data for modelling. 
+#'
+#' @description Takes polygons, an occurrence dataset and covariates. Returns a \code{data.frame} containing
+#'  centroid coordinates, count of occurrence points and a summary of covariate values for each polygon. 
+#'  Includes an option to specify the function to apply across pixel values for each covariate. 
+#'  The default is mean. 
+#'  
+#' @param polygons an object of \code{SpatialPolygons} class.  
+#'
+#' @param data a \code{data.frame} containing at least columns Longitude and Latitude
+#' 
+#' @param covariates a \code{RasterStack} 
+#' 
+#' @param fun vector of length equalling the number of covariates specifying the function to be
+#' applied across pixel values within each polygon for each covariate. The default is 'mean'. 
+#' Functions must be entered as strings and 'modal' should be specified for discrete variables.
+#'
+#' @return A \code{data.frame} of, for each polygon, centroid coordinates, 
+#' counts of occurrence points and a summary of covariate values. 
+#'
+#' @family GIS
+#'
+#' @export
+#' @import sp
+#' @import raster
+#' @import seegSDM
+#' 
+#' @examples 
+#' # load packages
+#' library(sp)
+#' library(raster)
+#' library(seegSDM)
+#' 
+#' # make voronoi polygons
+#' example(makeVoronoiPolygons)
+#' 
+#' # make occcurrence data
+#' occ <- matrix(c(-5, 0,
+#'                  -1, 6,
+#'                  -8, 8,
+#'                  -8, 7,
+#'                  -5, 10),
+#'              ncol=2,
+#'              byrow=TRUE)
+#' 
+#' # convert to dataframe
+#' occ <- as.data.frame(occ)
+#' 
+#' # add Longitude and Latitude columns
+#' colnames(occ)[colnames(occ)=='V1'] <- 'Longitude'
+#' colnames(occ)[colnames(occ)=='V2'] <- 'Latitude'
+#' 
+#' # load covariates from seegSDM
+#' data(covariates)
+#' 
+#' # make functions vector
+#' fun = c('mean', 'mean', 'modal')
+#' 
+#' # sort data
+#' dat <- sortPolyData(polygons = v, data = occ, covariates=covariates, fun=fun)
+
+
+sortPolyData <- function (polygons, 
+                          data, 
+                          covariates, 
+                          fun = rep('mean', nlayers(covariates))) {
+  
+  # takes polygons (SpatialPolygons object)
+  # occurrence dataset (dataframe containing at least columns longitude and latitude)
+  # covariate/s (raster object)
+  # fun is a vector stating which function to apply across pixels values in each covariate layer. 
+  # Note: 'modal' should be specified for discrete variables
+  # returns dataframe containing centroid coordinates, number of occurrence points and covariate values
+  
+  applyFunctions <- function (matrix, fun) {
+    # convert to dataframe
+    df <- as.data.frame(matrix)
+    # apply each element in fun to each column in df
+    summary <- mapply(FUN=function(x, f, ...) f(x, ...),
+                      df,
+                      fun,
+                      MoreArgs=list(na.rm=TRUE))
+  }
+  
+  # check whether arguments are in the correct format
+  if (class(data) != 'data.frame') {stop('data must be a dataframe')}
+  if (class(polygons) != 'SpatialPolygons') {stop('polygons must be a SpatialPolygons object')}
+  if (!(class(covariates) %in% c('RasterLayer', 'RasterBrick', 'RasterStack'))){stop('covariates must be a Raster object')}
+  if (length(fun) != nlayers(covariates)) {stop('number of covariate layers must equal the length of fun')}
+  
+  # strip elements in functions vector so they are recognised by fun argument in mapply
+  fun_str <- vector()
+  for (i in 1:length(fun)){
+    stripped <- get(fun[i])
+    fun_str <- append(fun_str, stripped)
+  }
+  
+  # make a matrix of the polygon centroid coordinates
+  centroids <- coordinates(polygons)
+  
+  # convert to a dataframe
+  result <- as.data.frame(centroids)
+  
+  # make nicer names 
+  colnames(result)[colnames(result)=='V1'] <- 'centroidLongitude'
+  colnames(result)[colnames(result)=='V2'] <- 'centroidLatitude'
+  
+  # calculate number of points within each voronoi polygon
+  
+  # make matrix of point coordinates 
+  point_matrix <- as.matrix(data[, c('Longitude', 'Latitude')])
+  
+  ras <- rasterize(point_matrix, covariates, fun='count', background = 0)
+  count <- extract(ras, polygons, fun = sum, na.rm = TRUE)
+  
+  # add number of points to result dataframe
+  result$count <- count
+  
+  # extract covariate values for each pixel within each polygon 
+  poly_covs <- extract(covariates, polygons, fun=NULL, na.rm=TRUE)
+  
+  poly_summary <- lapply(poly_covs, applyFunctions, fun_str)
+  
+  combined_poly_summary <- do.call(rbind, poly_summary)
+  
+  # combine with results dataframe
+  result <- cbind(result, combined_poly_summary)
+  
+  return(result)
+  
+}  

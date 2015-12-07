@@ -28,6 +28,7 @@ Create a mask \code{RasterLayer} with NA values in all cells more
 \seealso{
 Other GIS: \code{\link{condSim}}, \code{\link{getArea}},
   \code{\link{getPoints}}, \code{\link{insertRaster}},
-  \code{\link{ll2cart}}, \code{\link{safeMask}}
+  \code{\link{ll2cart}}, \code{\link{makeVoronoiPolygons}},
+  \code{\link{safeMask}}, \code{\link{sortPolyData}}
 }
 

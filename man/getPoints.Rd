@@ -44,6 +44,7 @@ Use random sampling and K-means clustering to generate
 \seealso{
 Other GIS: \code{\link{bufferMask}}, \code{\link{condSim}},
   \code{\link{getArea}}, \code{\link{insertRaster}},
-  \code{\link{ll2cart}}, \code{\link{safeMask}}
+  \code{\link{ll2cart}}, \code{\link{makeVoronoiPolygons}},
+  \code{\link{safeMask}}, \code{\link{sortPolyData}}
 }
 

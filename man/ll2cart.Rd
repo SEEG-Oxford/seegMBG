@@ -34,10 +34,14 @@ Convert coordinates given as latitude and longitude to
 \seealso{
 Other GIS: \code{\link{bufferMask}}, \code{\link{condSim}},
   \code{\link{getArea}}, \code{\link{getPoints}},
-  \code{\link{insertRaster}}, \code{\link{safeMask}}
+  \code{\link{insertRaster}},
+  \code{\link{makeVoronoiPolygons}},
+  \code{\link{safeMask}}, \code{\link{sortPolyData}}
 
 Other GIS: \code{\link{bufferMask}}, \code{\link{condSim}},
   \code{\link{getArea}}, \code{\link{getPoints}},
-  \code{\link{insertRaster}}, \code{\link{safeMask}}
+  \code{\link{insertRaster}},
+  \code{\link{makeVoronoiPolygons}},
+  \code{\link{safeMask}}, \code{\link{sortPolyData}}
 }
 

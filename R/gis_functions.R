@@ -483,13 +483,13 @@ condSim <- function (vals, weights = NULL, group = NULL, fun = NULL, ...) {
     
     # get an index o pixels in the level
     idx <- which(group == levels[lvl])
-    
+
     # by default, calculate a weighted sum
     if (is.null(fun)) {
       
       # get draws and add to results
       # exception for if area has 1 cell, transpose matrix so it conforms (RB)
-      if(ncell==1){
+      if(all(dim(t(vals[idx, ]))==c(1,ndraw))){
         ans[lvl, ] <- weights[idx] %*% t(vals[idx, ])
       } else {
         ans[lvl, ] <- weights[idx] %*% vals[idx, ]

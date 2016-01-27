@@ -27,34 +27,34 @@
 #' @import raster
 #'
 bufferMask <- function (mask, points, buffer = 0) {
-
+  
   # set mask to 0
   mask <- mask * 0
-
+  
   # get cell numbers for all points
   points_cells <- raster::extract(mask,
                                   points,
                                   cellnumbers = TRUE)[, 1]
-
+  
   # find spatially unique records (on grid)
   unique_idx <- !duplicated(points_cells)
-
+  
   # find values (and numbers) of cells falling under buffered, spatially
   # unique points
   mask_vals <- raster::extract(mask,
                                points[unique_idx, ],
                                cellnumbers = TRUE,
                                buffer = buffer)
-
+  
   # get as a vector of unique cells falling under the mask
   mask_cells <- unique(unlist(lapply(mask_vals, '[', , 1)))
-
+  
   # set these cells to NA
   mask[mask_cells] <- NA
-
+  
   # and return the new mask
   return (mask)
-
+  
 }
 
 #' @name insertRaster
@@ -84,29 +84,29 @@ bufferMask <- function (mask, points, buffer = 0) {
 #' @import raster
 #'
 insertRaster <- function (raster, new_vals, idx = NULL) {
-
-
+  
+  
   # calculate cell index if not provided
   if (is.null(idx)) idx <- cellIdx(raster)
-
+  
   # check the index makes superficial sense
   stopifnot(length(idx) == nrow(new_vals))
   stopifnot(max(idx) <= ncell(raster))
-
+  
   # create results raster
   n <- ncol(new_vals)
   raster_new <- raster::brick(replicate(n,
                                         raster[[1]],
                                         simplify = FALSE))
   names(raster_new) <- colnames(new_vals)
-
+  
   # update the values
   for(i in 1:n) {
     raster_new[[i]][idx] <- new_vals[, i]
   }
-
+  
   return (raster_new)
-
+  
 }
 
 
@@ -131,23 +131,23 @@ insertRaster <- function (raster, new_vals, idx = NULL) {
 #'  for each set of coordinates
 #'
 ll2cart <- function (longlat, radius = 6371) {
-
+  
   # check inputs
   stopifnot(is.finite(radius) & radius > 0)
   stopifnot(inherits(longlat, 'matrix') | inherits(longlat, 'data.frame'))
   stopifnot(ncol(longlat) == 2)
-
+  
   # extract required columns
   longitude <- longlat[, 1]
   latitude <- longlat[, 2]
-
+  
   # convert
   ans <- data.frame(x = radius * cos(latitude) * cos(longitude),
                     y = radius * cos(latitude) * sin(longitude),
                     z = radius * sin(latitude))
-
+  
   return (ans)
-
+  
 }
 
 
@@ -164,23 +164,23 @@ ll2cart <- function (longlat, radius = 6371) {
 #'  for each set of coordinates
 #'
 cart2ll <- function (xyz, radius = 6371) {
-
+  
   # check inputs
   stopifnot(is.finite(radius) & radius > 0)
   stopifnot(inherits(xyz, 'matrix') | inherits(xyz, 'data.frame'))
   stopifnot(ncol(xyz) == 3)
-
+  
   # extract columns
   x <- xyz[, 1]
   y <- xyz[, 2]
   z <- xyz[, 3]
-
+  
   # convert
   ans <- data.frame(longitude = atan2(y, x),
                     latitude = asin(z / radius))
-
+  
   return (ans)
-
+  
 }
 
 #' @rdname getArea
@@ -228,22 +228,22 @@ getArea <- function (sp) {
 #' @return a \code{RasterLayer} object, the same as \code{raster} but with
 #'  any cell falling under \code{sp} set to \code{NA}
 safeMask <- function(raster, sp) {
-
+  
   # extract by small polygons
   tmp <- raster::extract(raster, sp, cellnumbers = TRUE, small = TRUE)
-
+  
   # get all cell numbers under polygons
   cells <- na.omit(unlist(lapply(tmp, function(x) x[, 1])))
-
+  
   # get those not under polygons
   cells_chuck <- (1:ncell(raster))[-cells]
-
+  
   # set to NA
   raster[cells_chuck] <- NA
-
+  
   # return the masked raster
   return (raster)
-
+  
 }
 
 
@@ -289,24 +289,24 @@ getPoints <- function (shape,
                        n = 10,
                        perpixel = FALSE,
                        prob = FALSE) {
-
+  
   # if prob is FALSE, a shit-ton of points are sampled
   # uniformly at random within sp; if prob is TRUE they are biased
   # by population within the polygon.
   # The resulting points are then k-means clustered to yield
   # n representative points
-
+  
   # check raster
   stopifnot(inherits(raster, 'RasterLayer'))
-
+  
   # resize it
   raster <- raster::crop(raster, shape)
   raster <- safeMask(raster, shape)
-
-
+  
+  
   # get cell values to check them
   vals <- getValues(raster)
-
+  
   # if there are no valid cells, return no integration points
   # as a dataframe with no rows & issue a warning
   if (all(is.na(vals))) {
@@ -314,10 +314,10 @@ getPoints <- function (shape,
     ans <- data.frame(x = NA, y = NA, weights = NA)[0, ]
     return (ans)
   }
-
+  
   # if prob = TRUE and all valid cells are 0, set prob to FALSE
   if (prob) {
-
+    
     if (all(na.omit(vals) == 0)) {
       warning('all cells in raster for this polygon were zero, switching to prob = FALSE')
       prob <- FALSE
@@ -326,7 +326,7 @@ getPoints <- function (shape,
       raster[raster == 0] <- NA
     }
   }
-
+  
   if (perpixel) {
     # get number of valid pixels
     n_valid <- length(seegSDM:::notMissingIdx(raster))
@@ -334,48 +334,48 @@ getPoints <- function (shape,
     # otherwise get one times this many
     n_valid <- 1
   }
-
+  
   # correct total number to integer
   n <- ceiling(n * n_valid)
-
+  
   # get representative points in an sp object by uniform random
   # sampling then kmeans clustering
-
+  
   # sample points
   x <- seegSDM::bgSample(raster,
                          10000,
                          prob = prob,
                          spatial = FALSE,
                          replace = TRUE)
-
+  
   # coerce x to be a dataframe
   x <- as.data.frame(x)
-
+  
   # make sure there aren't more centres than unique datapoints
   n_unique <- nrow(unique(x))
   n <- pmin(n, n_unique)
-
+  
   # k-means cluster the data
   kmn <- kmeans(x, n)
-
+  
   # get the cluster centres
   u <- kmn$centers
-
+  
   # get the weights (proportion of points falling in that area)
   weights <- table(kmn$cluster) / length(kmn$cluster)
-
+  
   # remove any rownames from the inducing points
   rownames(u) <- NULL
-
+  
   # make sure they have their column names
   colnames(u) <- colnames(x)
-
+  
   # add the weights on
   u <- cbind(u, weights = weights)
-
+  
   # and return them
   return (u)
-
+  
 }
 
 #' @title condSim
@@ -438,16 +438,16 @@ condSim <- function (vals, weights = NULL, group = NULL, fun = NULL, ...) {
   # of corresponding pixel populations `pop`, and an optional pixel
   # grouping factor `group`, return draws for the total deaths in each
   # group, or overall if groups are not specified
-
+  
   # get dimensions of vals
   ncell <- nrow(vals)
   ndraw <- ncol(vals)
-
+  
   # capture function as a string
   fun_string <- deparse(substitute(fun))
-
+  
   # check fun accepts a
-
+  
   # check dimensions of weights and group, set to 1 if not specified
   if (is.null(weights)) {
     weights <- rep(1, ncell)
@@ -458,7 +458,7 @@ condSim <- function (vals, weights = NULL, group = NULL, fun = NULL, ...) {
                     ncell))
     }
   }
-
+  
   if (is.null(group)) {
     group <- rep(1, length(weights))
   } else {
@@ -468,43 +468,48 @@ condSim <- function (vals, weights = NULL, group = NULL, fun = NULL, ...) {
                     ncell))
     }
   }
-
+  
   # otherwise, get the levels in group and create a matrix of results
   levels <- unique(na.omit(group))
   nlevel <- length(levels)
-
+  
   ans <- matrix(NA,
                 ncol = ndraw,
                 nrow = nlevel)
   rownames(ans) <- levels
-
+  
   # loop through levels in group, getting the results
   for (lvl in 1:nlevel) {
-
+    
     # get an index o pixels in the level
     idx <- which(group == levels[lvl])
-
+    
     # by default, calculate a weighted sum
     if (is.null(fun)) {
-
+      
       # get draws and add to results
-      ans[lvl, ] <- weights[idx] %*% vals[idx, ]
-
+      # exception for if area has 1 cell, transpose matrix so it conforms (RB)
+      if(ncell==1){
+        ans[lvl, ] <- weights[idx] %*% t(vals[idx, ])
+      } else {
+        ans[lvl, ] <- weights[idx] %*% vals[idx, ]
+      }
+      
     } else {
-
+      
       # otherwise, apply function to each column
       ans[lvl, ] <- apply(vals[idx, ], 2, fun, weights = weights[idx], ...)
-
+      
     }
-
+    
   }
-
+  
   # if only one level, make this a vector
   if (nlevel == 1) ans <- as.vector(ans)
-
+  
   # return result
   return (ans)
-
+  
 }
 
 #' @name makeVoronoiPolygons

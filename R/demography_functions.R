@@ -662,10 +662,14 @@ periodTabulate <- function (age_death,
         start_mat <- start_mat + start_offset
         end_mat <- end_mat + end_offset
 
+        # determine whether the bin was actually observed
+        observed_mat <- (interview_date - delay_mat - extra_delay_mat) > 0
+
         # add effective number exposed
         exposed_cohort <- (birth_int <= end_mat &  # entered cohort before cohort end date
                              birth_int >= start_mat &  # entered cohort after cohort start date
-                             age_death >= lower_mat) # alive at start of cohort
+                             age_death >= lower_mat &  # alive at start of cohort
+                             observed_mat)  # the period ended before the interview date
 
         # and effective number that died
         deaths_cohort <- (exposed_cohort > 0 &  # actually exposed this time

@@ -663,7 +663,7 @@ periodTabulate <- function (age_death,
         end_mat <- end_mat + end_offset
 
         # determine whether the bin was actually observed
-        observed_mat <- (interview_date - delay_mat - extra_delay_mat) > 0
+        observed_mat <- (delay_mat - extra_delay_mat) > 0
 
         # add effective number exposed
         exposed_cohort <- (birth_int <= end_mat &  # entered cohort before cohort end date

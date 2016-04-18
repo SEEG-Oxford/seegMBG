@@ -666,7 +666,7 @@ periodTabulate <- function (age_death,
         trunc_mat <- start_mat - delay_mat
 
         # add effective number exposed
-        exposed_cohort <- (birth_int <= end_mat &  # entered cohort before cohort end date
+        exposed_cohort <- (birth_int < end_mat &  # entered cohort before cohort end date
                              birth_int >= start_mat &  # entered cohort after cohort start date
                              age_death >= lower_mat & # alive at start of cohort
                              birth_int >= trunc_mat)  # interview observed some of this bin

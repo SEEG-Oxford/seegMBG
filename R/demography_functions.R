@@ -507,21 +507,16 @@ periodTabulate <- function (age_death,
                            windows_upper[w],
                            by = 1)
 
-        # account for the 0th month not being made into a sequence
-        if (length(new_windows) == 1 && new_windows == 0) {
-          new_windows <- c(0, 0)
-        }
-
         # number of new windows
-        n_nw <- length(new_windows) - 1
+        n_nw <- length(new_windows)
 
         # recursively call this function with method = direct, calculating
         # numbers for monthly bins
         res_tmp <- periodTabulate(age_death = age_death,
                                   birth_int = birth_int,
                                   cluster_id = cluster_id,
-                                  windows_lower = new_windows[-n_nw],
-                                  windows_upper = new_windows[-1],
+                                  windows_lower = new_windows,
+                                  windows_upper = new_windows,
                                   nperiod = 1,
                                   period = period,
                                   period_end = period_end,
@@ -666,7 +661,7 @@ periodTabulate <- function (age_death,
         trunc_mat <- start_mat - delay_mat
 
         # add effective number exposed
-        exposed_cohort <- (birth_int <= end_mat &  # entered cohort before cohort end date
+        exposed_cohort <- (birth_int < end_mat &  # entered cohort before cohort end date
                              birth_int >= start_mat &  # entered cohort after cohort start date
                              age_death >= lower_mat & # alive at start of cohort
                              birth_int >= trunc_mat)  # interview observed some of this bin

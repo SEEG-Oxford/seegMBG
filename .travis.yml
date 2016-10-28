@@ -11,6 +11,7 @@ before_install:
 
 install:
   - sudo apt-get install libgdal1-dev libproj-dev
+  - ./pkg-build.sh install_aptget r-cran-rgdal r-cran-rgeos
   - ./pkg-build.sh install_github SEEG-Oxford/seegSDM andrewzm/INLA
   - ./pkg-build.sh install_deps
 

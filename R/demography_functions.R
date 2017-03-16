@@ -536,6 +536,13 @@ periodTabulate <- function (age_death,
         exposed_mnth <- tapply(res_tmp$exposed, res_tmp$cluster_id, sum)
         died_mnth <- tapply(res_tmp$died, res_tmp$cluster_id, sum)
 
+        # re-order these
+        o_exposed <- match(res_tmp$cluster_id, names(exposed_mnth))
+        exposed_mnth <- exposed_mnth[o_exposed]
+        
+        o_died <- match(res_tmp$cluster_id, names(died_mnth))
+        died_mnth <- died_mnth[o_exposed]
+        
         if (mortality == 'bin') {
 
           # get expected period exposures

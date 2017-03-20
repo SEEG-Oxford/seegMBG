@@ -248,7 +248,12 @@ rowProds <- function(x, na.rm = FALSE, dims = 1) {
 aggMatrix <- function(x, index, fun = sum, margin = 1, ...) {
   # aggregate rows of a matrix for dataframe using function and according to
   # index
-  agg <- function(x) tapply(x, INDEX = index, FUN = fun, ...)
+  agg <- function(x) {
+    res <- tapply(x, INDEX = index, FUN = fun, ...)
+    # reorder to match index's order
+    o <- match(index, names(res))
+    res[o]
+  }
   margin <- ifelse(margin == 1, 2, 1)
   apply(x, margin, agg)
 }

@@ -1,36 +1,58 @@
-## Sample .travis.yml file for use with metacran/r-builder
-## See https://github.com/metacran/r-builder for details.
-
-language: c
+language: r
+dist: trusty
+cache: packages
 sudo: required
 
-before_install:
-  - curl -OL https://raw.githubusercontent.com/metacran/r-builder/master/pkg-build.sh
-  - chmod 755 pkg-build.sh
-  - ./pkg-build.sh bootstrap
+##
+# code to get gdal working #
+addons:
+  apt:
+    packages:
+      - libgdal1-dev
+      - libproj-dev
+      
+r_binary_packages:
+ - rgdal
+ - rgeos
+ - raster
+ - mgcv
+ - snowfall
+ - deldir
+ - sp
 
-install:
-  - sudo apt-get install libgdal1-dev libproj-dev
-  - ./pkg-build.sh install_github SEEG-Oxford/seegSDM andrewzm/INLA
-  - ./pkg-build.sh install_deps
+r_github_packages:
+ - andrewzm/INLA
+ - SEEG-Oxford/seegSDM
 
-script:
-  - ./pkg-build.sh run_tests
+# Install the suggested packages which
+# are needed for the vignette builds
+r_packages:
+ - testthat
+ - covr
 
-after_failure:
-  - ./pkg-build.sh dump_logs
-
+## After success update the code coverage and deploy the pkgdown to gh-pages
+after_success:
+ - Rscript -e 'library(covr);codecov()'
+ 
+# Warnings don't fail build
+warnings_are_errors: false
+ 
+## Email notification if the package pass status changes
 notifications:
-  email:
-    on_success: change
-    on_failure: change
-
+email:
+  on_success: change
+  on_failure: change
+  
+## Set up the matrix of different runs
 env:
   matrix:
-    - RVERSION=oldrel
-      R_CHECK_ARGS="--no-manual"
-    - RVERSION=release
-      R_CHECK_ARGS="--no-manual"
-    - RVERSION=devel
-      R_CHECK_ARGS="--no-manual"
-
+    - r: old_rel
+      not_cran: false
+      r_check_args: "--no-manual --as--cran"
+    - r: release
+      not_cran: false
+      r_check_args: "--no-manual --as--cran"
+    - r: devel
+      not_cran: false
+      r_check_args: "--no-manual --as--cran"
+      

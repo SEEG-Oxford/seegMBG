@@ -541,7 +541,7 @@ periodTabulate <- function (age_death,
         exposed_mnth <- exposed_mnth[o_exposed]
         
         o_died <- match(res_tmp$cluster_id, names(died_mnth))
-        died_mnth <- died_mnth[o_exposed]
+        died_mnth <- died_mnth[o_died]
         
         if (mortality == 'bin') {
 

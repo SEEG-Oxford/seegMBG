@@ -30,4 +30,3 @@ Other utility: \code{\link{aggMatrix}},
   \code{\link{badRows}}, \code{\link{cellIdx}},
   \code{\link{merge.formula}}, \code{\link{rowProds}}
 }
-

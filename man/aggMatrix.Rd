@@ -42,4 +42,3 @@ Other utility: \code{\link{badRows}},
   \code{\link{cellIdx}}, \code{\link{expand}},
   \code{\link{merge.formula}}, \code{\link{rowProds}}
 }
-

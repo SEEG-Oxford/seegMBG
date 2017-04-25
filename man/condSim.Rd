@@ -67,4 +67,3 @@ Other GIS: \code{\link{bufferMask}}, \code{\link{getArea}},
   \code{\link{ll2cart}}, \code{\link{makeVoronoiPolygons}},
   \code{\link{safeMask}}, \code{\link{sortPolyData}}
 }
-

@@ -33,4 +33,3 @@ Other GIS: \code{\link{bufferMask}}, \code{\link{condSim}},
   \code{\link{ll2cart}}, \code{\link{makeVoronoiPolygons}},
   \code{\link{safeMask}}, \code{\link{sortPolyData}}
 }
-

@@ -41,4 +41,3 @@ Given a fitted \code{\link{inla}} object for a spatial or
  either from the maximum \emph{a posterior} parameter set, or as samples
  from the predictive posterior.
 }
-

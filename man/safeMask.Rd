@@ -29,4 +29,3 @@ Other GIS: \code{\link{bufferMask}}, \code{\link{condSim}},
   \code{\link{makeVoronoiPolygons}},
   \code{\link{sortPolyData}}
 }
-

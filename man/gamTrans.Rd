@@ -78,4 +78,3 @@ Define an optimal set of univariate covariate transformations of
   spline-transform the covariates. This makes use of the\code{type = 'terms'}
   argument in \code{\link{predict.gam}}. This function also makes use of
 }
-

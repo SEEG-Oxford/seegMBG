@@ -96,4 +96,3 @@ Given a fitted \code{\link{inla}} object for a spatial
      \item space-time models (to be added soon).
    }
 }
-

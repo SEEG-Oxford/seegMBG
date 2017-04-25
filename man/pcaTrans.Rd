@@ -23,4 +23,3 @@ Given a matrix of point coordinates and a Raster* object of
  giving principal components from a PCA rotation based on the data values
  at the coordinates.
 }
-

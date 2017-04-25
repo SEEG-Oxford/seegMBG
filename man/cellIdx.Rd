@@ -20,4 +20,3 @@ Other utility: \code{\link{aggMatrix}},
   \code{\link{badRows}}, \code{\link{expand}},
   \code{\link{merge.formula}}, \code{\link{rowProds}}
 }
-

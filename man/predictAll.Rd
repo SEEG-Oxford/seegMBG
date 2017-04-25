@@ -38,4 +38,3 @@ For a given set of parameters and new dataset, get the
  predicted values of the linear predictor form the fixed and spatial
  random effects.
 }
-

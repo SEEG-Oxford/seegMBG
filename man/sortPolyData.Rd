@@ -68,4 +68,3 @@ Other GIS: \code{\link{bufferMask}}, \code{\link{condSim}},
   \code{\link{insertRaster}}, \code{\link{ll2cart}},
   \code{\link{makeVoronoiPolygons}}, \code{\link{safeMask}}
 }
-

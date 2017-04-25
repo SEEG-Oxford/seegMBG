@@ -31,4 +31,3 @@ Other GIS: \code{\link{condSim}}, \code{\link{getArea}},
   \code{\link{ll2cart}}, \code{\link{makeVoronoiPolygons}},
   \code{\link{safeMask}}, \code{\link{sortPolyData}}
 }
-

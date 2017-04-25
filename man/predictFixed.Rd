@@ -26,4 +26,3 @@ a vector of the same length as the number of rows in \code{data},
 For a given set of paramters and new dataset, get the
  component of the linear predictor corresponding to the fixed effects.
 }
-

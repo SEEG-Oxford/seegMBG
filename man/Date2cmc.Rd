@@ -29,4 +29,3 @@ an object of class \code{numeric} (for \code{Date2cmc}) of of class
 Utility functions to convert between R's \code{Date} class and
   century-month-code (cmc) format, which measures time as month integers
 }
-

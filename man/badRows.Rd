@@ -27,4 +27,3 @@ Other utility: \code{\link{aggMatrix}},
   \code{\link{cellIdx}}, \code{\link{expand}},
   \code{\link{merge.formula}}, \code{\link{rowProds}}
 }
-

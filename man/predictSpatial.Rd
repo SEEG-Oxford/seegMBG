@@ -33,4 +33,3 @@ For a given set of paramters and new set of coordinates,
  get the component of the linear predictor corresponding to the spatial
  random effect, by linear interpolation.
 }
-

@@ -240,4 +240,3 @@ ans <- periodTabulate(age_death,
                       inclusion = 'enter',
                       mortality = 'monthly')
 }
-
